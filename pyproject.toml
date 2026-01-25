@@ -47,10 +47,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/arxiv-digest"
-Documentation = "https://github.com/yourusername/arxiv-digest#readme"
-Repository = "https://github.com/yourusername/arxiv-digest"
-Issues = "https://github.com/yourusername/arxiv-digest/issues"
+Homepage = "https://github.com/LevRoz630/arxiv-digest"
+Documentation = "https://github.com/LevRoz630/arxiv-digest#readme"
+Repository = "https://github.com/LevRoz630/arxiv-digest"
+Issues = "https://github.com/LevRoz630/arxiv-digest/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["arxiv_digest"]
