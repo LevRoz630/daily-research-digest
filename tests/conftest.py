@@ -126,7 +126,6 @@ def mock_llm() -> MagicMock:
     mock = MagicMock()
 
     async def mock_ainvoke(prompt: str) -> MagicMock:
-        # Return different scores based on paper content
         response = MagicMock()
         if "machine learning" in prompt.lower():
             response.content = '{"score": 8, "reason": "Highly relevant to ML interests"}'

@@ -7,6 +7,7 @@ import pytest
 
 from arxiv_digest.client import ArxivClient
 from arxiv_digest.digest import DigestGenerator
+from arxiv_digest.memory import PaperMemory
 from arxiv_digest.models import DigestConfig, Paper
 from arxiv_digest.storage import DigestStorage
 
@@ -157,3 +158,183 @@ class TestDigestGenerator:
             mock_fetch.assert_called_once()
             call_args = mock_fetch.call_args
             assert call_args[0][2] == sample_config_with_date_filter.date_filter
+
+    def test_init_with_memory(self, temp_storage_dir: Path, tmp_path: Path) -> None:
+        """Test generator initializes with paper memory."""
+        storage = DigestStorage(temp_storage_dir)
+        memory = PaperMemory(tmp_path / "memory.json")
+        generator = DigestGenerator(storage, memory=memory)
+
+        assert generator.memory == memory
+
+    @pytest.mark.asyncio
+    async def test_generate_filters_seen_papers(
+        self,
+        temp_storage_dir: Path,
+        tmp_path: Path,
+        sample_config: DigestConfig,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test that seen papers are filtered out when memory is enabled."""
+        storage = DigestStorage(temp_storage_dir)
+        memory = PaperMemory(tmp_path / "memory.json")
+
+        # Pre-record some papers as seen
+        memory.record(sample_papers[0].arxiv_id)
+        memory.record(sample_papers[1].arxiv_id)
+
+        generator = DigestGenerator(storage, memory=memory)
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+                mock_llm = MagicMock()
+
+                async def mock_ainvoke(prompt: str) -> MagicMock:
+                    response = MagicMock()
+                    response.content = '{"score": 7, "reason": "OK"}'
+                    return response
+
+                mock_llm.ainvoke = mock_ainvoke
+                mock_get_llm.return_value = mock_llm
+
+                result = await generator.generate(sample_config)
+
+        assert result["status"] == "completed"
+        # Should have filtered out 2 seen papers, so only 3 remain
+        assert result["digest"]["total_papers_fetched"] == 3
+
+    @pytest.mark.asyncio
+    async def test_generate_records_papers_in_memory(
+        self,
+        temp_storage_dir: Path,
+        tmp_path: Path,
+        sample_config: DigestConfig,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test that generated papers are recorded in memory."""
+        storage = DigestStorage(temp_storage_dir)
+        memory = PaperMemory(tmp_path / "memory.json")
+        generator = DigestGenerator(storage, memory=memory)
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+                mock_llm = MagicMock()
+
+                async def mock_ainvoke(prompt: str) -> MagicMock:
+                    response = MagicMock()
+                    response.content = '{"score": 7, "reason": "OK"}'
+                    return response
+
+                mock_llm.ainvoke = mock_ainvoke
+                mock_get_llm.return_value = mock_llm
+
+                await generator.generate(sample_config)
+
+        # Check that papers were recorded
+        assert memory.count() > 0
+
+    @pytest.mark.asyncio
+    async def test_generate_without_memory(
+        self,
+        temp_storage_dir: Path,
+        sample_config: DigestConfig,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test generation works without memory (backward compatibility)."""
+        storage = DigestStorage(temp_storage_dir)
+        generator = DigestGenerator(storage)  # No memory
+
+        assert generator.memory is None
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+                mock_llm = MagicMock()
+
+                async def mock_ainvoke(prompt: str) -> MagicMock:
+                    response = MagicMock()
+                    response.content = '{"score": 7, "reason": "OK"}'
+                    return response
+
+                mock_llm.ainvoke = mock_ainvoke
+                mock_get_llm.return_value = mock_llm
+
+                result = await generator.generate(sample_config)
+
+        assert result["status"] == "completed"
+        assert result["digest"]["total_papers_fetched"] == len(sample_papers)
+
+    @pytest.mark.asyncio
+    async def test_generate_exclude_seen_false(
+        self,
+        temp_storage_dir: Path,
+        tmp_path: Path,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test that exclude_seen=False disables filtering."""
+        storage = DigestStorage(temp_storage_dir)
+        memory = PaperMemory(tmp_path / "memory.json")
+
+        # Pre-record some papers
+        memory.record(sample_papers[0].arxiv_id)
+        memory.record(sample_papers[1].arxiv_id)
+
+        generator = DigestGenerator(storage, memory=memory)
+
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="machine learning",
+            exclude_seen=False,  # Disable filtering
+            anthropic_api_key="test-key",
+        )
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+                mock_llm = MagicMock()
+
+                async def mock_ainvoke(prompt: str) -> MagicMock:
+                    response = MagicMock()
+                    response.content = '{"score": 7, "reason": "OK"}'
+                    return response
+
+                mock_llm.ainvoke = mock_ainvoke
+                mock_get_llm.return_value = mock_llm
+
+                result = await generator.generate(config)
+
+        assert result["status"] == "completed"
+        # Should NOT have filtered, all 5 papers should remain
+        assert result["digest"]["total_papers_fetched"] == 5
+
+    @pytest.mark.asyncio
+    async def test_generate_all_papers_seen(
+        self,
+        temp_storage_dir: Path,
+        tmp_path: Path,
+        sample_config: DigestConfig,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test generation when all papers are already seen."""
+        storage = DigestStorage(temp_storage_dir)
+        memory = PaperMemory(tmp_path / "memory.json")
+
+        # Pre-record all papers
+        for paper in sample_papers:
+            memory.record(paper.arxiv_id)
+
+        generator = DigestGenerator(storage, memory=memory)
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            result = await generator.generate(sample_config)
+
+        assert result["status"] == "error"
+        assert "No unseen papers" in result["errors"][0]

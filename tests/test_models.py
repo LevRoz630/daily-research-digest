@@ -131,3 +131,20 @@ class TestDigestConfig:
         )
         assert config.date_filter is not None
         assert config.date_filter.days_back == 3
+
+    def test_digest_config_exclude_seen_default(self) -> None:
+        """Test DigestConfig.exclude_seen defaults to True."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+        )
+        assert config.exclude_seen is True
+
+    def test_digest_config_exclude_seen_false(self) -> None:
+        """Test DigestConfig.exclude_seen can be set to False."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+            exclude_seen=False,
+        )
+        assert config.exclude_seen is False

@@ -68,6 +68,7 @@ class DigestConfig:
     max_papers: int = 50
     top_n: int = 10
     date_filter: DateFilter | None = None
+    exclude_seen: bool = True
     llm_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None

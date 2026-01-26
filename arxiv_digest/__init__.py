@@ -2,6 +2,7 @@
 
 from .client import ArxivClient
 from .digest import DigestGenerator
+from .memory import PaperMemory
 from .models import DateFilter, DigestConfig, DigestState, Paper
 from .ranker import PaperRanker, get_llm_for_provider
 from .scheduler import ArxivScheduler
@@ -18,6 +19,7 @@ __all__ = [
     "DigestState",
     "DigestStorage",
     "Paper",
+    "PaperMemory",
     "PaperRanker",
     "get_llm_for_provider",
 ]

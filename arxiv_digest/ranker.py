@@ -14,7 +14,12 @@ logger = logging.getLogger(__name__)
 class PaperRanker:
     """Ranks papers by relevance using LLMs."""
 
-    def __init__(self, llm: Any, batch_size: int = 5, batch_delay: float = 1.0):
+    def __init__(
+        self,
+        llm: Any,
+        batch_size: int = 5,
+        batch_delay: float = 1.0,
+    ):
         """Initialize ranker.
 
         Args:
@@ -27,7 +32,7 @@ class PaperRanker:
         self.batch_delay = batch_delay
 
     async def rank_paper(self, paper: Paper, interests: str) -> Paper:
-        """Rank a single paper's relevance to interests.
+        """Rank a single paper.
 
         Args:
             paper: Paper to rank
@@ -36,16 +41,21 @@ class PaperRanker:
         Returns:
             Paper with relevance_score and relevance_reason set
         """
-        prompt = f"""Rate this paper's relevance to the following research interests.
-Use a scale of 1-10. Be strict - only give 8+ for papers directly relevant.
+        prompt = f"""Rate this paper's relevance to a researcher with these interests:
+{interests}
 
-Research interests: {interests}
+Paper: {paper.title}
+Categories: {', '.join(paper.categories)}
+Abstract: {paper.abstract[:1500]}
 
-Paper title: {paper.title}
-Abstract: {paper.abstract[:1000]}
+Score from 1-10 where:
+- 1-3: Not relevant
+- 4-6: Somewhat relevant
+- 7-8: Relevant
+- 9-10: Highly relevant (direct match to interests)
 
-Respond with ONLY a JSON object in this exact format (no other text):
-{{"score": <number 1-10>, "reason": "<brief 1-sentence explanation>"}}"""
+Respond with ONLY a JSON object:
+{{"score": <1-10>, "reason": "<brief explanation>"}}"""
 
         try:
             response = await self.llm.ainvoke(prompt)
@@ -57,9 +67,10 @@ Respond with ONLY a JSON object in this exact format (no other text):
                 content = match.group(1) if match else "{}"
 
             result = json.loads(content)
-            paper.relevance_score = float(result.get("score", 0))
+            paper.relevance_score = float(result.get("score", 5))
             paper.relevance_reason = result.get("reason", "")
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
+
+        except (json.JSONDecodeError, KeyError, ValueError, AttributeError) as e:
             logger.warning(f"Failed to parse ranking for {paper.arxiv_id}: {e}")
             paper.relevance_score = 5.0
             paper.relevance_reason = "Unable to rank"
@@ -67,7 +78,7 @@ Respond with ONLY a JSON object in this exact format (no other text):
         return paper
 
     async def rank_papers(self, papers: list[Paper], interests: str) -> list[Paper]:
-        """Rank all papers by relevance to interests.
+        """Rank all papers.
 
         Args:
             papers: List of papers to rank
@@ -76,9 +87,8 @@ Respond with ONLY a JSON object in this exact format (no other text):
         Returns:
             List of ranked papers sorted by relevance_score descending
         """
-        ranked_papers = []
+        ranked_papers: list[Paper] = []
 
-        # Rank papers in batches to avoid rate limits
         for i in range(0, len(papers), self.batch_size):
             batch = papers[i : i + self.batch_size]
             tasks = [self.rank_paper(paper, interests) for paper in batch]
