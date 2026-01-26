@@ -10,6 +10,7 @@ from .client import ArxivClient
 from .models import DigestConfig, DigestState
 from .ranker import PaperRanker, get_llm_for_provider
 from .sources.huggingface import HuggingFaceClient
+from .sources.semantic_scholar import SemanticScholarClient
 from .storage import DigestStorage
 
 if TYPE_CHECKING:
@@ -84,6 +85,23 @@ class DigestGenerator:
                         seen_ids.add(p.arxiv_id)
                         added += 1
                 logger.info(f"Added {added} unique papers from HuggingFace")
+
+            # Fetch from Semantic Scholar
+            if "semantic_scholar" in sources:
+                logger.info("Fetching papers from Semantic Scholar")
+                ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
+                ss_papers = await ss_client.fetch_papers(
+                    query=config.interests,
+                    limit=config.max_papers,
+                    fields_of_study=["Computer Science"],
+                )
+                added = 0
+                for p in ss_papers:
+                    if p.arxiv_id not in seen_ids:
+                        papers.append(p)
+                        seen_ids.add(p.arxiv_id)
+                        added += 1
+                logger.info(f"Added {added} unique papers from Semantic Scholar")
 
             logger.info(f"Total papers from all sources: {len(papers)}")
 

@@ -71,7 +71,8 @@ class DigestConfig:
     exclude_seen: bool = True
     priority_authors: list[str] | None = None
     author_boost: float = 1.5
-    sources: list[str] | None = None  # ["arxiv", "huggingface"], default arxiv only
+    sources: list[str] | None = None  # ["arxiv", "huggingface", "semantic_scholar"]
+    semantic_scholar_api_key: str | None = None
     llm_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
