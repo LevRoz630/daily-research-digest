@@ -3,6 +3,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class DigestStorage:
         logger.info(f"Digest saved to {digest_file}")
         return digest_file
 
-    def get_digest(self, date: str | None = None) -> dict | None:
+    def get_digest(self, date: str | None = None) -> dict[str, Any] | None:
         """Get a digest by date.
 
         Args:
@@ -60,8 +61,9 @@ class DigestStorage:
         if not digest_file.exists():
             return None
 
-        with open(digest_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+        with open(digest_file, encoding="utf-8") as f:
+            data: dict[str, Any] = json.load(f)
+            return data
 
     def list_digests(self, limit: int = 30) -> list[str]:
         """List available digest dates.

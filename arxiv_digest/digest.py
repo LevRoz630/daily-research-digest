@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 from .client import ArxivClient
-from .models import DigestConfig, DigestState, Paper
+from .models import DigestConfig, DigestState
 from .ranker import PaperRanker, get_llm_for_provider
 from .storage import DigestStorage
 
@@ -47,7 +47,9 @@ class DigestGenerator:
         try:
             # Fetch papers
             logger.info(f"Fetching papers from arXiv for categories: {config.categories}")
-            papers = await self.client.fetch_papers(config.categories, config.max_papers)
+            papers = await self.client.fetch_papers(
+                config.categories, config.max_papers, config.date_filter
+            )
             logger.info(f"Fetched {len(papers)} papers")
 
             if not papers:

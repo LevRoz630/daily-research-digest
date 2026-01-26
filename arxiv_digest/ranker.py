@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import re
+from typing import Any
 
 from .models import Paper
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class PaperRanker:
     """Ranks papers by relevance using LLMs."""
 
-    def __init__(self, llm, batch_size: int = 5, batch_delay: float = 1.0):
+    def __init__(self, llm: Any, batch_size: int = 5, batch_delay: float = 1.0):
         """Initialize ranker.
 
         Args:
@@ -35,8 +36,8 @@ class PaperRanker:
         Returns:
             Paper with relevance_score and relevance_reason set
         """
-        prompt = f"""Rate this paper's relevance to the following research interests on a scale of 1-10.
-Be strict - only give 8+ for papers directly relevant to the interests.
+        prompt = f"""Rate this paper's relevance to the following research interests.
+Use a scale of 1-10. Be strict - only give 8+ for papers directly relevant.
 
 Research interests: {interests}
 
@@ -103,7 +104,7 @@ def get_llm_for_provider(
     anthropic_api_key: str | None = None,
     openai_api_key: str | None = None,
     google_api_key: str | None = None,
-):
+) -> Any:
     """Get LLM instance for the specified provider.
 
     Args:
@@ -123,7 +124,7 @@ def get_llm_for_provider(
         if not anthropic_api_key:
             raise ValueError("anthropic_api_key is required for anthropic provider")
         try:
-            from langchain_anthropic import ChatAnthropic
+            from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
 
             return ChatAnthropic(
                 model="claude-3-haiku-20240307",
@@ -132,14 +133,15 @@ def get_llm_for_provider(
             )
         except ImportError as e:
             raise ImportError(
-                "langchain-anthropic not installed. Install with: pip install arxiv-digest[anthropic]"
+                "langchain-anthropic not installed. "
+                "Install with: pip install arxiv-digest[anthropic]"
             ) from e
 
     elif provider == "openai":
         if not openai_api_key:
             raise ValueError("openai_api_key is required for openai provider")
         try:
-            from langchain_openai import ChatOpenAI
+            from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
 
             return ChatOpenAI(
                 model="gpt-3.5-turbo",
@@ -155,7 +157,9 @@ def get_llm_for_provider(
         if not google_api_key:
             raise ValueError("google_api_key is required for google provider")
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_google_genai import (
+                ChatGoogleGenerativeAI,  # type: ignore[import-not-found]
+            )
 
             return ChatGoogleGenerativeAI(
                 model="gemini-1.5-flash",
@@ -164,7 +168,8 @@ def get_llm_for_provider(
             )
         except ImportError as e:
             raise ImportError(
-                "langchain-google-genai not installed. Install with: pip install arxiv-digest[google]"
+                "langchain-google-genai not installed. "
+                "Install with: pip install arxiv-digest[google]"
             ) from e
 
     else:

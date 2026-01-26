@@ -5,6 +5,21 @@ from datetime import datetime
 
 
 @dataclass
+class DateFilter:
+    """Date filtering options for papers.
+
+    Attributes:
+        days_back: Only include papers published within the last N days.
+        published_after: Only include papers published after this date (YYYY-MM-DD).
+        published_before: Only include papers published before this date (YYYY-MM-DD).
+    """
+
+    days_back: int | None = None
+    published_after: str | None = None
+    published_before: str | None = None
+
+
+@dataclass
 class Paper:
     """Represents an arXiv paper."""
 
@@ -52,6 +67,7 @@ class DigestConfig:
     interests: str
     max_papers: int = 50
     top_n: int = 10
+    date_filter: DateFilter | None = None
     llm_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None

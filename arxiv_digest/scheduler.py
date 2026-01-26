@@ -26,7 +26,7 @@ class ArxivScheduler:
         self._running = False
         self._config: DigestConfig | None = None
 
-    def start(self, config: DigestConfig, schedule_hour: int | None = None):
+    def start(self, config: DigestConfig, schedule_hour: int | None = None) -> None:
         """Start the background digest scheduler.
 
         Args:
@@ -44,7 +44,7 @@ class ArxivScheduler:
         self._task = asyncio.create_task(self._run_loop())
         logger.info(f"ArXiv scheduler started (daily at {self.schedule_hour}:00 UTC)")
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the background scheduler."""
         self._running = False
         if self._task:
@@ -60,9 +60,7 @@ class ArxivScheduler:
     def _seconds_until_next_run(self) -> float:
         """Calculate seconds until next scheduled run."""
         now = datetime.now(timezone.utc)
-        target = now.replace(
-            hour=self.schedule_hour, minute=0, second=0, microsecond=0
-        )
+        target = now.replace(hour=self.schedule_hour, minute=0, second=0, microsecond=0)
 
         if now >= target:
             # Already past today's schedule, run tomorrow
@@ -70,15 +68,13 @@ class ArxivScheduler:
 
         return (target - now).total_seconds()
 
-    async def _run_loop(self):
+    async def _run_loop(self) -> None:
         """Background loop for scheduled digest generation."""
         while self._running:
             try:
                 # Wait until next scheduled time
                 wait_seconds = self._seconds_until_next_run()
-                logger.info(
-                    f"ArXiv scheduler: next run in {wait_seconds / 3600:.1f} hours"
-                )
+                logger.info(f"ArXiv scheduler: next run in {wait_seconds / 3600:.1f} hours")
                 await asyncio.sleep(wait_seconds)
 
                 if self._running and self._config:

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <title>ArXiv Query: cs.AI</title>
+  <id>http://arxiv.org/api/query</id>
+  <entry>
+    <id>http://arxiv.org/abs/2401.00001v1</id>
+    <title>Test Paper One: A Study in Machine Learning</title>
+    <summary>This is the abstract for test paper one. It discusses machine learning techniques and their applications in artificial intelligence research.</summary>
+    <author>
+      <name>Alice Smith</name>
+    </author>
+    <author>
+      <name>Bob Johnson</name>
+    </author>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-01-15T00:00:00Z</published>
+    <updated>2024-01-15T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2401.00002v1</id>
+    <title>Test Paper Two: Neural Networks for NLP</title>
+    <summary>This is the abstract for test paper two. It explores neural network architectures for natural language processing tasks.</summary>
+    <author>
+      <name>Carol Williams</name>
+    </author>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-01-14T00:00:00Z</published>
+    <updated>2024-01-14T00:00:00Z</updated>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2401.00003v1</id>
+    <title>Test Paper Three: Reinforcement Learning Advances</title>
+    <summary>This paper presents advances in reinforcement learning algorithms with applications to robotics and game playing.</summary>
+    <author>
+      <name>David Brown</name>
+    </author>
+    <author>
+      <name>Eve Davis</name>
+    </author>
+    <author>
+      <name>Frank Miller</name>
+    </author>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-01-13T00:00:00Z</published>
+    <updated>2024-01-13T00:00:00Z</updated>
+  </entry>
+</feed>
