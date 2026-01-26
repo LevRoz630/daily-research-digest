@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from .client import ArxivClient
 from .models import DigestConfig, DigestState
 from .ranker import PaperRanker, get_llm_for_provider
+from .sources.huggingface import HuggingFaceClient
 from .storage import DigestStorage
 
 if TYPE_CHECKING:
@@ -54,12 +55,37 @@ class DigestGenerator:
         self.state.errors = []
 
         try:
-            # Fetch papers
-            logger.info(f"Fetching papers from arXiv for categories: {config.categories}")
-            papers = await self.client.fetch_papers(
-                config.categories, config.max_papers, config.date_filter
-            )
-            logger.info(f"Fetched {len(papers)} papers")
+            # Determine which sources to use
+            sources = config.sources or ["arxiv"]
+            papers: list = []
+            seen_ids: set[str] = set()
+
+            # Fetch from arXiv
+            if "arxiv" in sources:
+                logger.info(f"Fetching papers from arXiv for categories: {config.categories}")
+                arxiv_papers = await self.client.fetch_papers(
+                    config.categories, config.max_papers, config.date_filter
+                )
+                for p in arxiv_papers:
+                    if p.arxiv_id not in seen_ids:
+                        papers.append(p)
+                        seen_ids.add(p.arxiv_id)
+                logger.info(f"Fetched {len(arxiv_papers)} papers from arXiv")
+
+            # Fetch from HuggingFace
+            if "huggingface" in sources:
+                logger.info("Fetching papers from HuggingFace Daily Papers")
+                hf_client = HuggingFaceClient()
+                hf_papers = await hf_client.fetch_papers(limit=config.max_papers)
+                added = 0
+                for p in hf_papers:
+                    if p.arxiv_id not in seen_ids:
+                        papers.append(p)
+                        seen_ids.add(p.arxiv_id)
+                        added += 1
+                logger.info(f"Added {added} unique papers from HuggingFace")
+
+            logger.info(f"Total papers from all sources: {len(papers)}")
 
             if not papers:
                 self.state.errors.append("No papers fetched from arXiv")

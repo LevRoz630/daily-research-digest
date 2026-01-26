@@ -168,3 +168,20 @@ class TestDigestConfig:
         )
         assert config.priority_authors == ["Alice Smith", "Bob Johnson"]
         assert config.author_boost == 2.0
+
+    def test_digest_config_sources_default(self) -> None:
+        """Test DigestConfig.sources defaults to None (arxiv only)."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+        )
+        assert config.sources is None
+
+    def test_digest_config_sources_multiple(self) -> None:
+        """Test DigestConfig with multiple sources."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+            sources=["arxiv", "huggingface"],
+        )
+        assert config.sources == ["arxiv", "huggingface"]
