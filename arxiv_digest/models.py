@@ -69,6 +69,8 @@ class DigestConfig:
     top_n: int = 10
     date_filter: DateFilter | None = None
     exclude_seen: bool = True
+    priority_authors: list[str] | None = None
+    author_boost: float = 1.5
     llm_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None

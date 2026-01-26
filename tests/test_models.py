@@ -148,3 +148,23 @@ class TestDigestConfig:
             exclude_seen=False,
         )
         assert config.exclude_seen is False
+
+    def test_digest_config_priority_authors_default(self) -> None:
+        """Test DigestConfig.priority_authors defaults to None."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+        )
+        assert config.priority_authors is None
+        assert config.author_boost == 1.5
+
+    def test_digest_config_priority_authors(self) -> None:
+        """Test DigestConfig with priority authors."""
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="test",
+            priority_authors=["Alice Smith", "Bob Johnson"],
+            author_boost=2.0,
+        )
+        assert config.priority_authors == ["Alice Smith", "Bob Johnson"]
+        assert config.author_boost == 2.0

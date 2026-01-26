@@ -89,6 +89,20 @@ class DigestGenerator:
             ranker = PaperRanker(llm)
             ranked_papers = await ranker.rank_papers(papers, config.interests)
 
+            # Boost papers from priority authors
+            if config.priority_authors:
+                priority_lower = [a.lower() for a in config.priority_authors]
+                for paper in ranked_papers:
+                    paper_authors_lower = [a.lower() for a in paper.authors]
+                    if any(
+                        priority in author
+                        for priority in priority_lower
+                        for author in paper_authors_lower
+                    ):
+                        paper.relevance_score *= config.author_boost
+                # Re-sort after boosting
+                ranked_papers.sort(key=lambda p: p.relevance_score, reverse=True)
+
             # Take top N papers
             top_papers = ranked_papers[: config.top_n]
 

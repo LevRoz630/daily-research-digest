@@ -338,3 +338,45 @@ class TestDigestGenerator:
 
         assert result["status"] == "error"
         assert "No unseen papers" in result["errors"][0]
+
+    @pytest.mark.asyncio
+    async def test_generate_with_priority_authors(
+        self,
+        temp_storage_dir: Path,
+        sample_papers: list[Paper],
+    ) -> None:
+        """Test that priority authors boost paper scores."""
+        storage = DigestStorage(temp_storage_dir)
+        generator = DigestGenerator(storage)
+
+        # Alice Smith is an author on sample_papers[0]
+        config = DigestConfig(
+            categories=["cs.AI"],
+            interests="machine learning",
+            priority_authors=["Alice Smith"],
+            author_boost=2.0,
+            anthropic_api_key="test-key",
+        )
+
+        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
+            mock_fetch.return_value = sample_papers
+
+            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+                mock_llm = MagicMock()
+
+                async def mock_ainvoke(prompt: str) -> MagicMock:
+                    response = MagicMock()
+                    # Give all papers same base score
+                    response.content = '{"score": 5, "reason": "OK"}'
+                    return response
+
+                mock_llm.ainvoke = mock_ainvoke
+                mock_get_llm.return_value = mock_llm
+
+                result = await generator.generate(config)
+
+        assert result["status"] == "completed"
+        papers = result["digest"]["papers"]
+        # Paper by Alice Smith should be first (boosted from 5 to 10)
+        assert papers[0]["authors"] == ["Alice Smith"]
+        assert papers[0]["relevance_score"] == 10.0
