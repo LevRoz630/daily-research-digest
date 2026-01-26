@@ -136,3 +136,45 @@ class TestSemanticScholarClient:
             papers = await client.fetch_papers(query="test", limit=10)
 
         assert papers == []
+
+    @pytest.mark.asyncio
+    async def test_fetch_papers_rate_limit_retry(self) -> None:
+        """Test retry on rate limit (429) error."""
+        mock_response_data = {
+            "data": [
+                {
+                    "paperId": "abc123",
+                    "externalIds": {"ArXiv": "2401.00001"},
+                    "title": "Test Paper",
+                    "abstract": "Abstract",
+                    "authors": [{"name": "Author"}],
+                    "year": 2024,
+                    "fieldsOfStudy": ["Computer Science"],
+                }
+            ]
+        }
+
+        client = SemanticScholarClient(max_retries=2)
+
+        with patch(
+            "arxiv_digest.sources.semantic_scholar.httpx.AsyncClient"
+        ) as mock_client_class:
+            # First call returns 429, second succeeds
+            mock_rate_limited = MagicMock()
+            mock_rate_limited.status_code = 429
+            mock_rate_limited.request = MagicMock()
+
+            mock_success = MagicMock()
+            mock_success.status_code = 200
+            mock_success.json.return_value = mock_response_data
+            mock_success.raise_for_status = MagicMock()
+
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = [mock_rate_limited, mock_success]
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+
+            with patch("arxiv_digest.sources.semantic_scholar.asyncio.sleep"):
+                papers = await client.fetch_papers(query="test", limit=10)
+
+        assert len(papers) == 1
+        assert papers[0].arxiv_id == "2401.00001"

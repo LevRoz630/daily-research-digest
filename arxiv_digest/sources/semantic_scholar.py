@@ -1,5 +1,6 @@
 """Semantic Scholar client."""
 
+import asyncio
 import logging
 
 import httpx
@@ -14,15 +15,22 @@ SEMANTIC_SCHOLAR_API_URL = "https://api.semanticscholar.org/graph/v1/paper/searc
 class SemanticScholarClient:
     """Client for fetching papers from Semantic Scholar."""
 
-    def __init__(self, api_key: str | None = None, timeout: float = 30.0):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        timeout: float = 30.0,
+        max_retries: int = 3,
+    ):
         """Initialize client.
 
         Args:
             api_key: Semantic Scholar API key (optional but recommended)
             timeout: Request timeout in seconds
+            max_retries: Max retries on rate limit (429) errors
         """
         self.api_key = api_key
         self.timeout = timeout
+        self.max_retries = max_retries
 
     async def fetch_papers(
         self,
@@ -61,14 +69,7 @@ class SemanticScholarClient:
             headers["x-api-key"] = self.api_key
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(
-                    SEMANTIC_SCHOLAR_API_URL,
-                    params=params,
-                    headers=headers,
-                )
-                response.raise_for_status()
-                data = response.json()
+            data = await self._fetch_with_retry(params, headers)
 
             for item in data.get("data", []):
                 # Get arxiv ID if available
@@ -113,3 +114,49 @@ class SemanticScholarClient:
             logger.error(f"Error fetching from Semantic Scholar: {e}")
 
         return papers
+
+    async def _fetch_with_retry(
+        self, params: dict, headers: dict
+    ) -> dict:
+        """Fetch with retry on rate limit errors.
+
+        Args:
+            params: Request parameters
+            headers: Request headers
+
+        Returns:
+            JSON response data
+
+        Raises:
+            httpx.HTTPError: If all retries fail
+        """
+        last_error = None
+
+        for attempt in range(self.max_retries):
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(
+                    SEMANTIC_SCHOLAR_API_URL,
+                    params=params,
+                    headers=headers,
+                )
+
+                if response.status_code == 429:
+                    # Rate limited - wait and retry
+                    wait_time = 2 ** attempt  # 1, 2, 4 seconds
+                    logger.warning(
+                        f"Rate limited by Semantic Scholar, waiting {wait_time}s "
+                        f"(attempt {attempt + 1}/{self.max_retries})"
+                    )
+                    await asyncio.sleep(wait_time)
+                    last_error = httpx.HTTPStatusError(
+                        "Rate limited", request=response.request, response=response
+                    )
+                    continue
+
+                response.raise_for_status()
+                return response.json()
+
+        # All retries failed
+        if last_error:
+            raise last_error
+        return {"data": []}
