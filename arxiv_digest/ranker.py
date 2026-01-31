@@ -10,6 +10,14 @@ from .models import Paper
 
 logger = logging.getLogger(__name__)
 
+# Default relevance score when LLM parsing fails
+DEFAULT_RELEVANCE_SCORE = 5.0
+
+# Default model names for each provider
+DEFAULT_ANTHROPIC_MODEL = "claude-3-haiku-20240307"
+DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+DEFAULT_GOOGLE_MODEL = "gemini-1.5-flash"
+
 
 class PaperRanker:
     """Ranks papers by relevance using LLMs."""
@@ -67,12 +75,12 @@ Respond with ONLY a JSON object:
                 content = match.group(1) if match else "{}"
 
             result = json.loads(content)
-            paper.relevance_score = float(result.get("score", 5))
+            paper.relevance_score = float(result.get("score", DEFAULT_RELEVANCE_SCORE))
             paper.relevance_reason = result.get("reason", "")
 
         except (json.JSONDecodeError, KeyError, ValueError, AttributeError) as e:
             logger.warning(f"Failed to parse ranking for {paper.arxiv_id}: {e}")
-            paper.relevance_score = 5.0
+            paper.relevance_score = DEFAULT_RELEVANCE_SCORE
             paper.relevance_reason = "Unable to rank"
 
         return paper
@@ -137,7 +145,7 @@ def get_llm_for_provider(
             from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
 
             return ChatAnthropic(
-                model="claude-3-haiku-20240307",
+                model=DEFAULT_ANTHROPIC_MODEL,
                 api_key=anthropic_api_key,
                 max_tokens=256,
             )
@@ -154,7 +162,7 @@ def get_llm_for_provider(
             from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
 
             return ChatOpenAI(
-                model="gpt-3.5-turbo",
+                model=DEFAULT_OPENAI_MODEL,
                 api_key=openai_api_key,
                 max_tokens=256,
             )
@@ -172,7 +180,7 @@ def get_llm_for_provider(
             )
 
             return ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
+                model=DEFAULT_GOOGLE_MODEL,
                 google_api_key=google_api_key,
                 max_output_tokens=256,
             )

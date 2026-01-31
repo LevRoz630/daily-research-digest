@@ -1,6 +1,6 @@
 """Data models for arxiv-digest."""
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 
@@ -36,18 +36,7 @@ class Paper:
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
-        return {
-            "arxiv_id": self.arxiv_id,
-            "title": self.title,
-            "abstract": self.abstract,
-            "authors": self.authors,
-            "categories": self.categories,
-            "published": self.published,
-            "updated": self.updated,
-            "link": self.link,
-            "relevance_score": self.relevance_score,
-            "relevance_reason": self.relevance_reason,
-        }
+        return asdict(self)
 
 
 @dataclass

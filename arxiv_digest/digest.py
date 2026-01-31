@@ -40,6 +40,18 @@ class DigestGenerator:
         self.memory = memory
         self.state = DigestState()
 
+    def _add_unique_papers(
+        self, papers: list, new_papers: list, seen_ids: set[str]
+    ) -> int:
+        """Add papers not already in seen_ids. Returns count added."""
+        added = 0
+        for p in new_papers:
+            if p.arxiv_id not in seen_ids:
+                papers.append(p)
+                seen_ids.add(p.arxiv_id)
+                added += 1
+        return added
+
     async def generate(self, config: DigestConfig) -> dict:
         """Generate a digest.
 
@@ -67,10 +79,7 @@ class DigestGenerator:
                 arxiv_papers = await self.client.fetch_papers(
                     config.categories, config.max_papers, config.date_filter
                 )
-                for p in arxiv_papers:
-                    if p.arxiv_id not in seen_ids:
-                        papers.append(p)
-                        seen_ids.add(p.arxiv_id)
+                self._add_unique_papers(papers, arxiv_papers, seen_ids)
                 logger.info(f"Fetched {len(arxiv_papers)} papers from arXiv")
 
             # Fetch from HuggingFace
@@ -78,12 +87,7 @@ class DigestGenerator:
                 logger.info("Fetching papers from HuggingFace Daily Papers")
                 hf_client = HuggingFaceClient()
                 hf_papers = await hf_client.fetch_papers(limit=config.max_papers)
-                added = 0
-                for p in hf_papers:
-                    if p.arxiv_id not in seen_ids:
-                        papers.append(p)
-                        seen_ids.add(p.arxiv_id)
-                        added += 1
+                added = self._add_unique_papers(papers, hf_papers, seen_ids)
                 logger.info(f"Added {added} unique papers from HuggingFace")
 
             # Fetch from Semantic Scholar
@@ -95,18 +99,13 @@ class DigestGenerator:
                     limit=config.max_papers,
                     fields_of_study=["Computer Science"],
                 )
-                added = 0
-                for p in ss_papers:
-                    if p.arxiv_id not in seen_ids:
-                        papers.append(p)
-                        seen_ids.add(p.arxiv_id)
-                        added += 1
+                added = self._add_unique_papers(papers, ss_papers, seen_ids)
                 logger.info(f"Added {added} unique papers from Semantic Scholar")
 
             logger.info(f"Total papers from all sources: {len(papers)}")
 
             if not papers:
-                self.state.errors.append("No papers fetched from arXiv")
+                self.state.errors.append("No papers fetched from any source")
                 return {"status": "error", "errors": self.state.errors}
 
             # Filter out previously seen papers if memory is enabled
@@ -163,8 +162,7 @@ class DigestGenerator:
 
             # Record papers in memory
             if self.memory:
-                for paper in top_papers:
-                    self.memory.record(paper.arxiv_id)
+                self.memory.record_many([p.arxiv_id for p in top_papers])
                 logger.info(f"Recorded {len(top_papers)} papers in memory")
 
             # Save digest

@@ -33,6 +33,11 @@ class PaperMemory:
         self._seen.add(arxiv_id)
         self._save()
 
+    def record_many(self, arxiv_ids: list[str]) -> None:
+        """Record multiple papers as seen (single save operation)."""
+        self._seen.update(arxiv_ids)
+        self._save()
+
     def is_seen(self, arxiv_id: str) -> bool:
         """Check if a paper has been seen."""
         return arxiv_id in self._seen

@@ -93,8 +93,7 @@ class ArxivClient:
         """
         papers: list[Paper] = []
 
-        # Build query for multiple categories (OR them together)
-        cat_query = "+OR+".join([f"cat:{cat}" for cat in categories])
+        cat_query = "+OR+".join([f"cat:{cat}" for cat in categories])  # OR categories
         url = (
             f"{self.BASE_URL}?"
             f"search_query={cat_query}&"
@@ -111,7 +110,6 @@ class ArxivClient:
                 logger.error(f"Failed to fetch arXiv papers: {e}")
                 return papers
 
-        # Parse XML response
         try:
             root = ET.fromstring(response.text)
             ns = {
@@ -120,39 +118,33 @@ class ArxivClient:
             }
 
             for entry in root.findall("atom:entry", ns):
-                # Extract arxiv ID from the id URL
                 id_elem = entry.find("atom:id", ns)
                 if id_elem is None or id_elem.text is None:
                     continue
                 arxiv_id = id_elem.text.split("/abs/")[-1]
 
-                # Get title
                 title_elem = entry.find("atom:title", ns)
                 if title_elem is None or title_elem.text is None:
                     continue
                 title = title_elem.text.strip().replace("\n", " ")
 
-                # Get abstract
                 abstract_elem = entry.find("atom:summary", ns)
                 if abstract_elem is None or abstract_elem.text is None:
                     continue
                 abstract = abstract_elem.text.strip().replace("\n", " ")
 
-                # Get authors
                 authors: list[str] = []
                 for a in entry.findall("atom:author", ns):
                     name_elem = a.find("atom:name", ns)
                     if name_elem is not None and name_elem.text is not None:
                         authors.append(name_elem.text)
 
-                # Get categories
                 cats: list[str] = []
                 for cat in entry.findall("atom:category", ns):
                     term = cat.get("term")
                     if term:
                         cats.append(term)
 
-                # Get dates
                 published_elem = entry.find("atom:published", ns)
                 updated_elem = entry.find("atom:updated", ns)
                 if published_elem is None or published_elem.text is None:
