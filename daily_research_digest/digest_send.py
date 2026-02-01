@@ -7,10 +7,13 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
+
+from pathlib import Path
 
 from .config_env import ConfigError, DigestEmailConfig, load_config_from_env, parse_window
 from .digest import DigestGenerator
@@ -81,6 +84,7 @@ async def generate_digest_content(
     window_start: datetime,
     window_end: datetime,
     config: DigestEmailConfig,
+    save_dir: Path | None = None,
 ) -> Digest:
     """Generate digest content for the time window.
 
@@ -88,6 +92,7 @@ async def generate_digest_content(
         window_start: Start of time window
         window_end: End of time window
         config: Email configuration with digest settings
+        save_dir: Optional directory to save digest JSON
 
     Returns:
         Digest object with papers and metadata
@@ -113,7 +118,6 @@ async def generate_digest_content(
 
     # Use temporary storage for this run
     import tempfile
-    from pathlib import Path
 
     with tempfile.TemporaryDirectory() as tmpdir:
         storage = DigestStorage(Path(tmpdir))
@@ -130,6 +134,15 @@ async def generate_digest_content(
 
         digest_data = result["digest"]
         papers = digest_data.get("papers", [])
+
+        # Save digest JSON if directory specified
+        if save_dir:
+            save_dir.mkdir(parents=True, exist_ok=True)
+            date_str = window_end.strftime("%Y-%m-%d")
+            digest_file = save_dir / f"{date_str}.json"
+            with open(digest_file, "w") as f:
+                json.dump(digest_data, f, indent=2)
+            log_info(f"Saved digest to {digest_file}")
 
         # Convert paper dicts back to Paper objects
         from .models import Paper
@@ -214,9 +227,15 @@ async def async_main() -> int:
         log_error("State backend error", error=str(e))
         return 1
 
+    # Check if we should save digest to a directory
+    save_dir = None
+    save_dir_env = os.environ.get("DIGEST_SAVE_DIR")
+    if save_dir_env:
+        save_dir = Path(save_dir_env)
+
     # Generate digest
     try:
-        digest = await generate_digest_content(window_start, window_end, config)
+        digest = await generate_digest_content(window_start, window_end, config, save_dir)
     except Exception as e:
         log_error("Failed to generate digest", error=str(e))
         return 1

@@ -5,13 +5,24 @@ on:
     # Run daily at 6 AM UTC (adjust as needed)
     - cron: '0 6 * * *'
   workflow_dispatch:
-    # Allow manual trigger from GitHub UI
+    # Allow manual trigger from GitHub UI or website
     inputs:
       dry_run:
         description: 'Dry run (skip actual email sending)'
         required: false
         default: 'false'
         type: boolean
+      categories:
+        description: 'arXiv categories (comma-separated, e.g., cs.AI,cs.CL)'
+        required: false
+        type: string
+      interests:
+        description: 'Research interests for ranking'
+        required: false
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   send-digest:
@@ -44,9 +55,9 @@ jobs:
           # Required: Recipients
           DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
 
-          # Required: Content configuration
-          DIGEST_CATEGORIES: ${{ vars.DIGEST_CATEGORIES || 'cs.AI,cs.LG,cs.CL' }}
-          DIGEST_INTERESTS: ${{ vars.DIGEST_INTERESTS || 'machine learning, AI agents, large language models' }}
+          # Required: Content configuration (inputs override vars)
+          DIGEST_CATEGORIES: ${{ inputs.categories || vars.DIGEST_CATEGORIES || 'cs.AI,cs.LG,cs.CL' }}
+          DIGEST_INTERESTS: ${{ inputs.interests || vars.DIGEST_INTERESTS || 'machine learning, AI agents, large language models' }}
 
           # Optional: Email settings
           DIGEST_SUBJECT: ${{ vars.DIGEST_SUBJECT || 'Daily Research Digest - {date}' }}
@@ -70,7 +81,18 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+          # Save digest JSON for website
+          DIGEST_SAVE_DIR: digests
         run: python -m daily_research_digest.digest_send
+
+      - name: Commit digest files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add digests/
+          git diff --staged --quiet || git commit -m "Add digest for $(date +%Y-%m-%d)"
+          git push
 
       - name: Save digest state
         uses: actions/cache/save@v4

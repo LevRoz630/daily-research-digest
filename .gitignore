@@ -48,6 +48,8 @@ htmlcov/
 dist/
 build/
 
-# Digests (for testing)
-digests/
-*.json
+# Build output
+_site/
+
+# Local state (not digests)
+.digest_state/
