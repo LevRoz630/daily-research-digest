@@ -49,10 +49,15 @@ class PaperRanker:
         Returns:
             Paper with relevance_score and relevance_reason set
         """
+        authors_str = ", ".join(paper.authors[:5])
+        if len(paper.authors) > 5:
+            authors_str += f" +{len(paper.authors) - 5} more"
+
         prompt = f"""Rate this paper's relevance to a researcher with these interests:
 {interests}
 
 Paper: {paper.title}
+Authors: {authors_str}
 Categories: {', '.join(paper.categories)}
 Abstract: {paper.abstract[:1500]}
 
