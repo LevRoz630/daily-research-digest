@@ -7,8 +7,6 @@ import pytest
 
 from daily_research_digest.config_env import (
     ConfigError,
-    DigestEmailConfig,
-    SMTPConfig,
     load_config_from_env,
     parse_bool,
     parse_list,
