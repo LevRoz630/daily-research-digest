@@ -6,8 +6,8 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from .client import ArxivClient
-from .models import DigestConfig, DigestState
+from .models import DigestConfig, DigestState, Paper
+from .quality import compute_quality_scores
 from .ranker import PaperRanker, get_llm_for_provider
 from .sources.huggingface import HuggingFaceClient
 from .sources.semantic_scholar import SemanticScholarClient
@@ -20,34 +20,41 @@ logger = logging.getLogger(__name__)
 
 
 class DigestGenerator:
-    """Generates arXiv paper digests."""
+    """Generates research paper digests."""
 
     def __init__(
         self,
         storage: DigestStorage,
-        client: ArxivClient | None = None,
         memory: PaperMemory | None = None,
     ):
         """Initialize generator.
 
         Args:
             storage: DigestStorage instance for saving/loading digests
-            client: ArxivClient instance (creates default if None)
             memory: PaperMemory instance for tracking seen papers (optional)
         """
         self.storage = storage
-        self.client = client or ArxivClient()
         self.memory = memory
         self.state = DigestState()
 
-    def _add_unique_papers(self, papers: list, new_papers: list, seen_ids: set[str]) -> int:
-        """Add papers not already in seen_ids. Returns count added."""
+    def _add_unique_papers(
+        self, papers: list[Paper], new_papers: list[Paper], seen_ids: set[str]
+    ) -> int:
+        """Add papers not already in seen_ids, merging quality data. Returns count added."""
         added = 0
         for p in new_papers:
             if p.arxiv_id not in seen_ids:
                 papers.append(p)
                 seen_ids.add(p.arxiv_id)
                 added += 1
+            else:
+                # Merge quality data into existing paper
+                existing = next((ep for ep in papers if ep.arxiv_id == p.arxiv_id), None)
+                if existing:
+                    if p.author_h_indices and not existing.author_h_indices:
+                        existing.author_h_indices = p.author_h_indices
+                    if p.huggingface_upvotes and not existing.huggingface_upvotes:
+                        existing.huggingface_upvotes = p.huggingface_upvotes
         return added
 
     async def generate(self, config: DigestConfig) -> dict:
@@ -66,39 +73,27 @@ class DigestGenerator:
         self.state.errors = []
 
         try:
-            # Determine which sources to use
-            sources = config.sources or ["arxiv"]
-            papers: list = []
+            # New pipeline: Semantic Scholar + HuggingFace only (no arXiv)
+            papers: list[Paper] = []
             seen_ids: set[str] = set()
 
-            # Fetch from arXiv
-            if "arxiv" in sources:
-                logger.info(f"Fetching papers from arXiv for categories: {config.categories}")
-                arxiv_papers = await self.client.fetch_papers(
-                    config.categories, config.max_papers, config.date_filter
-                )
-                self._add_unique_papers(papers, arxiv_papers, seen_ids)
-                logger.info(f"Fetched {len(arxiv_papers)} papers from arXiv")
+            # Fetch from Semantic Scholar (with h-index)
+            logger.info("Fetching papers from Semantic Scholar")
+            ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
+            ss_papers = await ss_client.fetch_papers(
+                query=config.interests,
+                limit=config.max_papers,
+                fields_of_study=["Computer Science"],
+            )
+            self._add_unique_papers(papers, ss_papers, seen_ids)
+            logger.info(f"Fetched {len(ss_papers)} papers from Semantic Scholar")
 
-            # Fetch from HuggingFace
-            if "huggingface" in sources:
-                logger.info("Fetching papers from HuggingFace Daily Papers")
-                hf_client = HuggingFaceClient()
-                hf_papers = await hf_client.fetch_papers(limit=config.max_papers)
-                added = self._add_unique_papers(papers, hf_papers, seen_ids)
-                logger.info(f"Added {added} unique papers from HuggingFace")
-
-            # Fetch from Semantic Scholar
-            if "semantic_scholar" in sources:
-                logger.info("Fetching papers from Semantic Scholar")
-                ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
-                ss_papers = await ss_client.fetch_papers(
-                    query=config.interests,
-                    limit=config.max_papers,
-                    fields_of_study=["Computer Science"],
-                )
-                added = self._add_unique_papers(papers, ss_papers, seen_ids)
-                logger.info(f"Added {added} unique papers from Semantic Scholar")
+            # Fetch from HuggingFace (with upvotes)
+            logger.info("Fetching papers from HuggingFace Daily Papers")
+            hf_client = HuggingFaceClient()
+            hf_papers = await hf_client.fetch_papers(limit=config.max_papers)
+            added = self._add_unique_papers(papers, hf_papers, seen_ids)
+            logger.info(f"Added {added} unique papers from HuggingFace")
 
             logger.info(f"Total papers from all sources: {len(papers)}")
 
@@ -141,8 +136,13 @@ class DigestGenerator:
                         for author in paper_authors_lower
                     ):
                         paper.relevance_score *= config.author_boost
-                # Re-sort after boosting
-                ranked_papers.sort(key=lambda p: p.relevance_score, reverse=True)
+
+            # Compute quality scores (incorporates h-index and upvotes)
+            logger.info("Computing quality scores")
+            compute_quality_scores(ranked_papers)
+
+            # Sort by quality score (final ranking)
+            ranked_papers.sort(key=lambda p: p.quality_score or 0, reverse=True)
 
             # Take top N papers
             top_papers = ranked_papers[: config.top_n]

@@ -9,13 +9,14 @@ from .digest_state import LocalFileStateBackend, compute_digest_id
 from .email_provider import DryRunProvider, EmailSendError, SMTPProvider
 from .memory import PaperMemory
 from .models import DateFilter, DigestConfig, DigestState, Paper
+from .quality import compute_quality_score, compute_quality_scores
 from .ranker import PaperRanker, get_llm_for_provider
 from .scheduler import ArxivScheduler
 from .sources.huggingface import HuggingFaceClient
 from .sources.semantic_scholar import SemanticScholarClient
 from .storage import DigestStorage
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     # Core
@@ -31,6 +32,8 @@ __all__ = [
     "PaperMemory",
     "PaperRanker",
     "SemanticScholarClient",
+    "compute_quality_score",
+    "compute_quality_scores",
     "get_llm_for_provider",
     # Email digest
     "ConfigError",

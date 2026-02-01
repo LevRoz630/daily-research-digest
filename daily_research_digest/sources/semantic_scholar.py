@@ -55,7 +55,7 @@ class SemanticScholarClient:
         params = {
             "query": query,
             "limit": min(limit, 100),  # API max is 100
-            "fields": "paperId,externalIds,title,abstract,authors,year,fieldsOfStudy",
+            "fields": "paperId,externalIds,title,abstract,authors,authors.hIndex,year,fieldsOfStudy",
         }
 
         if fields_of_study:
@@ -81,11 +81,16 @@ class SemanticScholarClient:
                     # Use paperId as fallback
                     arxiv_id = f"s2:{item.get('paperId', '')}"
 
-                # Extract author names
+                # Extract author names and h-indices
                 authors = [
                     author.get("name", "")
                     for author in item.get("authors", [])
                     if author.get("name")
+                ]
+                author_h_indices = [
+                    author.get("hIndex")
+                    for author in item.get("authors", [])
+                    if author.get("hIndex") is not None
                 ]
 
                 # Get categories from fieldsOfStudy
@@ -103,6 +108,7 @@ class SemanticScholarClient:
                     published=published,
                     updated=published,
                     link=f"https://www.semanticscholar.org/paper/{item.get('paperId', '')}",
+                    author_h_indices=author_h_indices if author_h_indices else None,
                 )
                 papers.append(paper)
 

@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from daily_research_digest.client import ArxivClient
 from daily_research_digest.digest import DigestGenerator
 from daily_research_digest.memory import PaperMemory
 from daily_research_digest.models import DigestConfig, Paper
@@ -21,17 +20,15 @@ class TestDigestGenerator:
         generator = DigestGenerator(storage)
 
         assert generator.storage == storage
-        assert generator.client is not None
         assert generator.state.is_generating is False
 
-    def test_init_with_custom_client(self, temp_storage_dir: Path) -> None:
-        """Test generator initializes with custom client."""
+    def test_init_with_memory(self, temp_storage_dir: Path, tmp_path: Path) -> None:
+        """Test generator initializes with paper memory."""
         storage = DigestStorage(temp_storage_dir)
-        client = ArxivClient(timeout=60.0)
-        generator = DigestGenerator(storage, client=client)
+        memory = PaperMemory(tmp_path / "memory.json")
+        generator = DigestGenerator(storage, memory=memory)
 
-        assert generator.client == client
-        assert generator.client.timeout == 60.0
+        assert generator.memory == memory
 
     @pytest.mark.asyncio
     async def test_generate_success(
@@ -44,22 +41,33 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        # Mock the client and ranker
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        # Mock the Semantic Scholar and HuggingFace clients
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "Relevant"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = '{"score": 7, "reason": "Relevant"}'
+                return response
 
-                result = await generator.generate(sample_config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            result = await generator.generate(sample_config)
 
         assert result["status"] == "completed"
         assert "digest" in result
@@ -74,8 +82,18 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = []
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=[])
+            mock_ss_cls.return_value = mock_ss
+
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
             result = await generator.generate(sample_config)
 
@@ -108,8 +126,12 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.side_effect = Exception("Test error")
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(side_effect=Exception("Test error"))
+            mock_ss_cls.return_value = mock_ss
 
             result = await generator.generate(sample_config)
 
@@ -126,46 +148,6 @@ class TestDigestGenerator:
         assert state.last_digest is None
         assert state.is_generating is False
         assert state.errors == []
-
-    @pytest.mark.asyncio
-    async def test_generate_passes_date_filter(
-        self,
-        temp_storage_dir: Path,
-        sample_config_with_date_filter: DigestConfig,
-        sample_papers: list[Paper],
-    ) -> None:
-        """Test that date_filter is passed to client."""
-        storage = DigestStorage(temp_storage_dir)
-        generator = DigestGenerator(storage)
-
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
-
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
-
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "Relevant"}'
-                    return response
-
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
-
-                await generator.generate(sample_config_with_date_filter)
-
-            # Verify fetch_papers was called with date_filter
-            mock_fetch.assert_called_once()
-            call_args = mock_fetch.call_args
-            assert call_args[0][2] == sample_config_with_date_filter.date_filter
-
-    def test_init_with_memory(self, temp_storage_dir: Path, tmp_path: Path) -> None:
-        """Test generator initializes with paper memory."""
-        storage = DigestStorage(temp_storage_dir)
-        memory = PaperMemory(tmp_path / "memory.json")
-        generator = DigestGenerator(storage, memory=memory)
-
-        assert generator.memory == memory
 
     @pytest.mark.asyncio
     async def test_generate_filters_seen_papers(
@@ -185,21 +167,32 @@ class TestDigestGenerator:
 
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "OK"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = '{"score": 7, "reason": "OK"}'
+                return response
 
-                result = await generator.generate(sample_config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            result = await generator.generate(sample_config)
 
         assert result["status"] == "completed"
         # Should have filtered out 2 seen papers, so only 3 remain
@@ -218,21 +211,32 @@ class TestDigestGenerator:
         memory = PaperMemory(tmp_path / "memory.json")
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "OK"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = '{"score": 7, "reason": "OK"}'
+                return response
 
-                await generator.generate(sample_config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            await generator.generate(sample_config)
 
         # Check that papers were recorded
         assert memory.count() > 0
@@ -250,21 +254,32 @@ class TestDigestGenerator:
 
         assert generator.memory is None
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "OK"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = '{"score": 7, "reason": "OK"}'
+                return response
 
-                result = await generator.generate(sample_config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            result = await generator.generate(sample_config)
 
         assert result["status"] == "completed"
         assert result["digest"]["total_papers_fetched"] == len(sample_papers)
@@ -293,21 +308,32 @@ class TestDigestGenerator:
             anthropic_api_key="test-key",
         )
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    response.content = '{"score": 7, "reason": "OK"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = '{"score": 7, "reason": "OK"}'
+                return response
 
-                result = await generator.generate(config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            result = await generator.generate(config)
 
         assert result["status"] == "completed"
         # Should NOT have filtered, all 5 papers should remain
@@ -331,8 +357,18 @@ class TestDigestGenerator:
 
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
+
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
             result = await generator.generate(sample_config)
 
@@ -358,22 +394,33 @@ class TestDigestGenerator:
             anthropic_api_key="test-key",
         )
 
-        with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
-            mock_fetch.return_value = sample_papers
+        with patch(
+            "daily_research_digest.digest.SemanticScholarClient"
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.HuggingFaceClient"
+        ) as mock_hf_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
+            mock_ss = MagicMock()
+            mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
+            mock_ss_cls.return_value = mock_ss
 
-            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
-                mock_llm = MagicMock()
+            mock_hf = MagicMock()
+            mock_hf.fetch_papers = AsyncMock(return_value=[])
+            mock_hf_cls.return_value = mock_hf
 
-                async def mock_ainvoke(prompt: str) -> MagicMock:
-                    response = MagicMock()
-                    # Give all papers same base score
-                    response.content = '{"score": 5, "reason": "OK"}'
-                    return response
+            mock_llm = MagicMock()
 
-                mock_llm.ainvoke = mock_ainvoke
-                mock_get_llm.return_value = mock_llm
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                # Give all papers same base score
+                response.content = '{"score": 5, "reason": "OK"}'
+                return response
 
-                result = await generator.generate(config)
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
+
+            result = await generator.generate(config)
 
         assert result["status"] == "completed"
         papers = result["digest"]["papers"]

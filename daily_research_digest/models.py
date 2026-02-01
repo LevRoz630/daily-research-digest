@@ -33,6 +33,9 @@ class Paper:
     link: str
     relevance_score: float = 0.0
     relevance_reason: str = ""
+    author_h_indices: list[int] | None = None
+    huggingface_upvotes: int | None = None
+    quality_score: float | None = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""

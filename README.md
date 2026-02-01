@@ -1,15 +1,38 @@
 # Daily Research Digest
 
-AI-powered research paper digest with LLM-based ranking and automatic scheduling. Fetches papers from arXiv, HuggingFace Daily Papers, and Semantic Scholar.
+AI-powered research paper digest with LLM-based ranking, quality scoring, and automatic scheduling. Fetches papers from Semantic Scholar and HuggingFace Daily Papers with author credibility signals.
 
 ## Features
 
-- Fetch recent papers from multiple sources (arXiv, HuggingFace, Semantic Scholar)
-- Rank papers by relevance using LLMs (Anthropic, OpenAI, or Google)
-- Generate daily digests with top relevant papers
-- Background scheduler for automated digest generation
-- Email digest delivery via SMTP (GitHub Actions compatible)
-- Store digests as JSON files with date-based organization
+- **Multi-source paper fetching**: Semantic Scholar (with author h-index) and HuggingFace Daily Papers (with upvotes)
+- **Quality-aware ranking**: Combines LLM relevance scores with author h-index and community upvotes
+- **Smart deduplication**: Merges quality signals when papers appear in multiple sources
+- **LLM-powered relevance**: Rank papers using Anthropic, OpenAI, or Google models
+- **Automatic scheduling**: Background scheduler for daily digest generation
+- **Email delivery**: SMTP-based digest emails (GitHub Actions compatible)
+- **JSON storage**: Date-based organization for easy retrieval
+
+## What's New in v0.2.0
+
+- **Quality Scoring Pipeline**: Papers are now ranked using a combined quality score that factors in:
+  - LLM relevance score (1-10)
+  - Author h-index (from Semantic Scholar)
+  - Community upvotes (from HuggingFace)
+- **Simplified Sources**: Streamlined to Semantic Scholar + HuggingFace (Semantic Scholar indexes arXiv papers)
+- **New Paper Fields**: `author_h_indices`, `huggingface_upvotes`, `quality_score`
+
+### Quality Scoring Formula
+
+```
+final_score = llm_relevance × (1 + quality_boost)
+
+quality_boost = 0.2 × h_factor + 0.2 × upvotes_factor
+```
+
+- `h_factor`: Normalized average author h-index (0-1)
+- `upvotes_factor`: Normalized HuggingFace upvotes (0-1)
+- Maximum 40% boost from quality signals
+- Missing data = no boost (not a penalty)
 
 ## Installation
 
@@ -35,16 +58,14 @@ pip install daily-research-digest[dev]
 import asyncio
 from pathlib import Path
 from daily_research_digest import (
-    ArxivClient,
     DigestConfig,
     DigestGenerator,
     DigestStorage,
-    ArxivScheduler,
 )
 
 # Configure digest
 config = DigestConfig(
-    categories=["cs.AI", "cs.CL", "cs.LG"],
+    categories=["cs.AI", "cs.CL", "cs.LG"],  # For reference/filtering
     interests="AI agents, large language models, natural language processing",
     max_papers=50,
     top_n=10,
@@ -68,8 +89,17 @@ async def main():
         print(f"Generated digest with {len(digest['papers'])} papers")
 
         for paper in digest['papers']:
-            print(f"\n{paper['relevance_score']:.1f} - {paper['title']}")
+            score = paper.get('quality_score') or paper['relevance_score']
+            print(f"\n{score:.1f} - {paper['title']}")
             print(f"  {paper['link']}")
+
+            # Show quality signals
+            if paper.get('author_h_indices'):
+                avg_h = sum(paper['author_h_indices']) / len(paper['author_h_indices'])
+                print(f"  Avg h-index: {avg_h:.0f}")
+            if paper.get('huggingface_upvotes'):
+                print(f"  HF upvotes: {paper['huggingface_upvotes']}")
+
             print(f"  Reason: {paper['relevance_reason']}")
 
 asyncio.run(main())
@@ -137,8 +167,7 @@ Send daily digest emails using GitHub Actions. The digest runner supports:
 
    | Variable | Default | Description |
    |----------|---------|-------------|
-   | `DIGEST_CATEGORIES` | `cs.AI,cs.LG,cs.CL` | arXiv categories |
-   | `DIGEST_INTERESTS` | `machine learning...` | Research interests |
+   | `DIGEST_INTERESTS` | `machine learning...` | Research interests for search & ranking |
    | `DIGEST_SUBJECT` | `Daily Research Digest - {date}` | Email subject |
    | `DIGEST_TZ` | `UTC` | Timezone |
    | `DIGEST_WINDOW` | `24h` | Time window |
@@ -157,8 +186,7 @@ Run the digest sender locally:
 ```bash
 # Set required environment variables
 export DIGEST_RECIPIENTS="you@example.com"
-export DIGEST_CATEGORIES="cs.AI,cs.LG"
-export DIGEST_INTERESTS="machine learning, AI agents"
+export DIGEST_INTERESTS="machine learning, AI agents, transformers"
 export SMTP_HOST="smtp.gmail.com"
 export SMTP_USER="your-email@gmail.com"
 export SMTP_PASS="your-app-password"
@@ -173,13 +201,12 @@ python -m daily_research_digest.digest_send
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DIGEST_RECIPIENTS` | Yes | - | Comma-separated email addresses |
-| `DIGEST_CATEGORIES` | Yes | - | Comma-separated arXiv categories |
-| `DIGEST_INTERESTS` | Yes | - | Research interests for ranking |
+| `DIGEST_INTERESTS` | Yes | - | Research interests for search & ranking |
 | `DIGEST_SUBJECT` | No | `Daily Research Digest - {date}` | Email subject (supports `{date}`) |
 | `DIGEST_FROM` | No | `noreply@example.com` | Sender address |
 | `DIGEST_TZ` | No | `UTC` | Timezone for window calculation |
 | `DIGEST_WINDOW` | No | `24h` | Time window (`24h`, `1d`, `48h`, `7d`) |
-| `DIGEST_MAX_PAPERS` | No | `50` | Max papers to fetch |
+| `DIGEST_MAX_PAPERS` | No | `50` | Max papers to fetch per source |
 | `DIGEST_TOP_N` | No | `10` | Top papers in digest |
 | `SMTP_HOST` | Yes | - | SMTP server hostname |
 | `SMTP_PORT` | No | `587` | SMTP server port |
@@ -195,27 +222,14 @@ python -m daily_research_digest.digest_send
 
 ### DigestConfig
 
-- `categories`: List of arXiv category codes (e.g., `["cs.AI", "cs.LG"]`)
-- `interests`: Research interests description for ranking
-- `max_papers`: Maximum papers to fetch (default: 50)
+- `categories`: List of category codes for reference (e.g., `["cs.AI", "cs.LG"]`)
+- `interests`: Research interests description for search and ranking
+- `max_papers`: Maximum papers to fetch per source (default: 50)
 - `top_n`: Number of top papers to include in digest (default: 10)
 - `llm_provider`: One of "anthropic", "openai", or "google"
+- `priority_authors`: List of author names to boost in ranking
+- `author_boost`: Multiplier for priority author papers (default: 1.5)
 - API keys for your chosen provider
-
-### Common arXiv Categories
-
-| Category | Description |
-|----------|-------------|
-| cs.AI | Artificial Intelligence |
-| cs.CL | Computation and Language (NLP) |
-| cs.LG | Machine Learning |
-| cs.CV | Computer Vision |
-| cs.NE | Neural and Evolutionary Computing |
-| stat.ML | Machine Learning (Statistics) |
-| q-fin.ST | Statistical Finance |
-| q-fin.PM | Portfolio Management |
-
-Full taxonomy: https://arxiv.org/category_taxonomy
 
 ## LLM Providers
 
@@ -251,31 +265,92 @@ Digests are saved as JSON files with the following structure:
       "updated": "2024-01-14T00:00:00Z",
       "link": "https://arxiv.org/abs/2401.12345",
       "relevance_score": 9.0,
-      "relevance_reason": "Directly addresses AI agent architectures"
+      "relevance_reason": "Directly addresses AI agent architectures",
+      "author_h_indices": [45, 32, 28],
+      "huggingface_upvotes": 156,
+      "quality_score": 11.2
     }
   ]
 }
 ```
 
+### Paper Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `arxiv_id` | string | Paper identifier (arXiv ID or source-specific) |
+| `title` | string | Paper title |
+| `abstract` | string | Paper abstract |
+| `authors` | string[] | List of author names |
+| `categories` | string[] | Paper categories/fields |
+| `published` | string | Publication date (ISO format) |
+| `link` | string | URL to paper |
+| `relevance_score` | float | LLM-assigned relevance (1-10) |
+| `relevance_reason` | string | LLM explanation for score |
+| `author_h_indices` | int[] | h-index for each author (from Semantic Scholar) |
+| `huggingface_upvotes` | int | Community upvotes (from HuggingFace) |
+| `quality_score` | float | Final combined score |
+
 ## API Reference
-
-### ArxivClient
-
-Fetches papers from arXiv API.
-
-```python
-client = ArxivClient(timeout=30.0)
-papers = await client.fetch_papers(["cs.AI"], max_results=50)
-```
 
 ### DigestGenerator
 
-Generates paper digests.
+Generates paper digests using the quality scoring pipeline.
 
 ```python
 storage = DigestStorage(Path("./digests"))
 generator = DigestGenerator(storage)
 result = await generator.generate(config)
+```
+
+### Quality Scoring
+
+Compute quality scores manually:
+
+```python
+from daily_research_digest import compute_quality_scores
+
+# papers is a list of Paper objects with relevance_score set
+compute_quality_scores(papers)
+
+# Each paper now has quality_score populated
+for paper in papers:
+    print(f"{paper.quality_score:.1f} - {paper.title}")
+```
+
+### SemanticScholarClient
+
+Fetches papers from Semantic Scholar with author h-index.
+
+```python
+from daily_research_digest import SemanticScholarClient
+
+client = SemanticScholarClient(api_key="optional-api-key")
+papers = await client.fetch_papers(
+    query="large language models",
+    limit=50,
+    fields_of_study=["Computer Science"]
+)
+
+for paper in papers:
+    if paper.author_h_indices:
+        avg_h = sum(paper.author_h_indices) / len(paper.author_h_indices)
+        print(f"{paper.title} - avg h-index: {avg_h:.0f}")
+```
+
+### HuggingFaceClient
+
+Fetches trending papers from HuggingFace Daily Papers with upvotes.
+
+```python
+from daily_research_digest import HuggingFaceClient
+
+client = HuggingFaceClient()
+papers = await client.fetch_papers(limit=50)
+
+for paper in papers:
+    if paper.huggingface_upvotes:
+        print(f"{paper.title} - {paper.huggingface_upvotes} upvotes")
 ```
 
 ### DigestStorage

@@ -63,6 +63,9 @@ class HuggingFaceClient:
                     except ValueError:
                         pass
 
+                # Get upvotes from paper data
+                upvotes = paper_data.get("upvotes")
+
                 paper = Paper(
                     arxiv_id=paper_id,
                     title=item.get("title", ""),
@@ -72,6 +75,7 @@ class HuggingFaceClient:
                     published=published,
                     updated=published,
                     link=f"https://huggingface.co/papers/{paper_id}",
+                    huggingface_upvotes=upvotes,
                 )
                 papers.append(paper)
 
