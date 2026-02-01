@@ -206,18 +206,20 @@ class TestLoadConfigFromEnv:
     def test_custom_values(self) -> None:
         """Test custom values override defaults."""
         env = self._base_env()
-        env.update({
-            "DIGEST_SUBJECT": "Custom Subject - {date}",
-            "DIGEST_FROM": "custom@example.com",
-            "DIGEST_TZ": "US/Pacific",
-            "DIGEST_WINDOW": "48h",
-            "DIGEST_MAX_PAPERS": "100",
-            "DIGEST_TOP_N": "20",
-            "SMTP_PORT": "465",
-            "SMTP_USER": "user",
-            "SMTP_PASS": "pass",
-            "SMTP_TLS": "false",
-        })
+        env.update(
+            {
+                "DIGEST_SUBJECT": "Custom Subject - {date}",
+                "DIGEST_FROM": "custom@example.com",
+                "DIGEST_TZ": "US/Pacific",
+                "DIGEST_WINDOW": "48h",
+                "DIGEST_MAX_PAPERS": "100",
+                "DIGEST_TOP_N": "20",
+                "SMTP_PORT": "465",
+                "SMTP_USER": "user",
+                "SMTP_PASS": "pass",
+                "SMTP_TLS": "false",
+            }
+        )
         with patch.dict(os.environ, env, clear=True):
             config = load_config_from_env()
 

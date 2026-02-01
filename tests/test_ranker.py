@@ -60,9 +60,7 @@ class TestPaperRanker:
         assert ranked.relevance_reason == "Unable to rank"
 
     @pytest.mark.asyncio
-    async def test_rank_papers_batch(
-        self, mock_llm: MagicMock, sample_papers: list[Paper]
-    ) -> None:
+    async def test_rank_papers_batch(self, mock_llm: MagicMock, sample_papers: list[Paper]) -> None:
         """Test ranking multiple papers in batches."""
         ranker = PaperRanker(mock_llm, batch_size=2, batch_delay=0.01)
 

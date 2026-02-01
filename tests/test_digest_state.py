@@ -36,12 +36,10 @@ class TestComputeDigestId:
         subject = "Test"
 
         id1 = compute_digest_id(
-            datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc),
-            window_end, recipients, subject
+            datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc), window_end, recipients, subject
         )
         id2 = compute_digest_id(
-            datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc),
-            window_end, recipients, subject
+            datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc), window_end, recipients, subject
         )
 
         assert id1 != id2
@@ -53,14 +51,10 @@ class TestComputeDigestId:
         subject = "Test"
 
         id1 = compute_digest_id(
-            window_start,
-            datetime(2024, 1, 16, 6, 0, 0, tzinfo=timezone.utc),
-            recipients, subject
+            window_start, datetime(2024, 1, 16, 6, 0, 0, tzinfo=timezone.utc), recipients, subject
         )
         id2 = compute_digest_id(
-            window_start,
-            datetime(2024, 1, 17, 6, 0, 0, tzinfo=timezone.utc),
-            recipients, subject
+            window_start, datetime(2024, 1, 17, 6, 0, 0, tzinfo=timezone.utc), recipients, subject
         )
 
         assert id1 != id2
