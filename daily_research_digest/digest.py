@@ -77,10 +77,12 @@ class DigestGenerator:
             seen_ids: set[str] = set()
 
             # Fetch from Semantic Scholar (with h-index)
-            logger.info("Fetching papers from Semantic Scholar")
+            # Use only the first line of interests as search query (rest may be LLM instructions)
+            search_query = config.interests.split("\n")[0].strip()
+            logger.info(f"Fetching papers from Semantic Scholar with query: {search_query}")
             ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
             ss_papers = await ss_client.fetch_papers(
-                query=config.interests,
+                query=search_query,
                 limit=config.max_papers,
                 fields_of_study=["Computer Science"],
             )
