@@ -1,4 +1,4 @@
-"""Shared test fixtures for arxiv-digest tests."""
+"""Shared test fixtures for daily-research-digest tests."""
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from arxiv_digest.models import DateFilter, DigestConfig, Paper
+from daily_research_digest.models import DateFilter, DigestConfig, Paper
 
 
 @pytest.fixture

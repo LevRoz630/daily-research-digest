@@ -1,4 +1,4 @@
-"""Data models for arxiv-digest."""
+"""Data models for daily-research-digest."""
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime

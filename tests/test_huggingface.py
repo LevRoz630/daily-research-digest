@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from arxiv_digest.sources.huggingface import HuggingFaceClient
+from daily_research_digest.sources.huggingface import HuggingFaceClient
 
 
 class TestHuggingFaceClient:
@@ -41,7 +41,7 @@ class TestHuggingFaceClient:
         client = HuggingFaceClient()
 
         with patch(
-            "arxiv_digest.sources.huggingface.httpx.AsyncClient"
+            "daily_research_digest.sources.huggingface.httpx.AsyncClient"
         ) as mock_client_class:
             # httpx response.json() is synchronous, so use MagicMock not AsyncMock
             mock_response = MagicMock()
@@ -67,7 +67,7 @@ class TestHuggingFaceClient:
         client = HuggingFaceClient()
 
         with patch(
-            "arxiv_digest.sources.huggingface.httpx.AsyncClient"
+            "daily_research_digest.sources.huggingface.httpx.AsyncClient"
         ) as mock_client_class:
             mock_response = MagicMock()
             mock_response.json.return_value = []
@@ -89,7 +89,7 @@ class TestHuggingFaceClient:
         client = HuggingFaceClient()
 
         with patch(
-            "arxiv_digest.sources.huggingface.httpx.AsyncClient"
+            "daily_research_digest.sources.huggingface.httpx.AsyncClient"
         ) as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get.side_effect = httpx.HTTPError("Connection failed")

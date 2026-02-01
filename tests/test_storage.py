@@ -1,11 +1,11 @@
-"""Tests for arxiv_digest.storage module."""
+"""Tests for daily_research_digest.storage module."""
 
 import json
 from pathlib import Path
 
 import pytest
 
-from arxiv_digest.storage import DigestStorage
+from daily_research_digest.storage import DigestStorage
 
 
 class TestDigestStorage:

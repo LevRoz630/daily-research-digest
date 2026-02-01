@@ -1,4 +1,4 @@
-"""Tests for arxiv_digest.scheduler module."""
+"""Tests for daily_research_digest.scheduler module."""
 
 import asyncio
 from datetime import datetime, timezone
@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 import pytest
 
-from arxiv_digest.digest import DigestGenerator
-from arxiv_digest.models import DigestConfig
-from arxiv_digest.scheduler import ArxivScheduler
-from arxiv_digest.storage import DigestStorage
+from daily_research_digest.digest import DigestGenerator
+from daily_research_digest.models import DigestConfig
+from daily_research_digest.scheduler import ArxivScheduler
+from daily_research_digest.storage import DigestStorage
 
 
 class TestArxivScheduler:
@@ -84,7 +84,7 @@ class TestArxivScheduler:
         scheduler = ArxivScheduler(generator, schedule_hour=23)
 
         # Mock current time to be early in the day
-        with patch("arxiv_digest.scheduler.datetime") as mock_dt:
+        with patch("daily_research_digest.scheduler.datetime") as mock_dt:
             mock_now = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
             mock_dt.now.return_value = mock_now
             mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
@@ -100,7 +100,7 @@ class TestArxivScheduler:
         scheduler = ArxivScheduler(generator, schedule_hour=6)
 
         # Mock current time to be after schedule hour
-        with patch("arxiv_digest.scheduler.datetime") as mock_dt:
+        with patch("daily_research_digest.scheduler.datetime") as mock_dt:
             mock_now = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
             mock_dt.now.return_value = mock_now
             mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)

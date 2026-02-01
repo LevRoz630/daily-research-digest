@@ -1,11 +1,11 @@
-"""Tests for arxiv_digest.ranker module."""
+"""Tests for daily_research_digest.ranker module."""
 
 from unittest.mock import MagicMock
 
 import pytest
 
-from arxiv_digest.models import Paper
-from arxiv_digest.ranker import PaperRanker, get_llm_for_provider
+from daily_research_digest.models import Paper
+from daily_research_digest.ranker import PaperRanker, get_llm_for_provider
 
 
 class TestPaperRanker:

@@ -1,10 +1,10 @@
-"""Tests for arxiv_digest.memory module."""
+"""Tests for daily_research_digest.memory module."""
 
 from pathlib import Path
 
 import pytest
 
-from arxiv_digest.memory import PaperMemory
+from daily_research_digest.memory import PaperMemory
 
 
 class TestPaperMemory:

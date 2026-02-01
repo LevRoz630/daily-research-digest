@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "arxiv-digest"
+name = "daily-research-digest"
 version = "0.1.0"
 description = "AI-powered arXiv paper digest with LLM-based ranking and scheduling"
 readme = "README.md"
@@ -47,13 +47,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LevRoz630/arxiv-digest"
-Documentation = "https://github.com/LevRoz630/arxiv-digest#readme"
-Repository = "https://github.com/LevRoz630/arxiv-digest"
-Issues = "https://github.com/LevRoz630/arxiv-digest/issues"
+Homepage = "https://github.com/LevRoz630/daily-research-digest"
+Documentation = "https://github.com/LevRoz630/daily-research-digest#readme"
+Repository = "https://github.com/LevRoz630/daily-research-digest"
+Issues = "https://github.com/LevRoz630/daily-research-digest/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["arxiv_digest"]
+packages = ["daily_research_digest"]
 
 [tool.black]
 line-length = 100

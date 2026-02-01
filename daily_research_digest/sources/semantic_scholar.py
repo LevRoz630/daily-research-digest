@@ -115,9 +115,7 @@ class SemanticScholarClient:
 
         return papers
 
-    async def _fetch_with_retry(
-        self, params: dict, headers: dict
-    ) -> dict:
+    async def _fetch_with_retry(self, params: dict, headers: dict) -> dict:
         """Fetch with retry on rate limit errors.
 
         Args:
@@ -142,7 +140,7 @@ class SemanticScholarClient:
 
                 if response.status_code == 429:
                     # Rate limited - wait and retry
-                    wait_time = 2 ** attempt  # 1, 2, 4 seconds
+                    wait_time = 2**attempt  # 1, 2, 4 seconds
                     logger.warning(
                         f"Rate limited by Semantic Scholar, waiting {wait_time}s "
                         f"(attempt {attempt + 1}/{self.max_retries})"

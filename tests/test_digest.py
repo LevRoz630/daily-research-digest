@@ -1,15 +1,15 @@
-"""Tests for arxiv_digest.digest module."""
+"""Tests for daily_research_digest.digest module."""
 
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from arxiv_digest.client import ArxivClient
-from arxiv_digest.digest import DigestGenerator
-from arxiv_digest.memory import PaperMemory
-from arxiv_digest.models import DigestConfig, Paper
-from arxiv_digest.storage import DigestStorage
+from daily_research_digest.client import ArxivClient
+from daily_research_digest.digest import DigestGenerator
+from daily_research_digest.memory import PaperMemory
+from daily_research_digest.models import DigestConfig, Paper
+from daily_research_digest.storage import DigestStorage
 
 
 class TestDigestGenerator:
@@ -48,7 +48,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -141,7 +141,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -188,7 +188,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -221,7 +221,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -253,7 +253,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -296,7 +296,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:
@@ -361,7 +361,7 @@ class TestDigestGenerator:
         with patch.object(generator.client, "fetch_papers", new_callable=AsyncMock) as mock_fetch:
             mock_fetch.return_value = sample_papers
 
-            with patch("arxiv_digest.digest.get_llm_for_provider") as mock_get_llm:
+            with patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm:
                 mock_llm = MagicMock()
 
                 async def mock_ainvoke(prompt: str) -> MagicMock:

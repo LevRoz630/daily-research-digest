@@ -1,1 +1,1 @@
-"""Tests for arxiv-digest."""
+"""Tests for daily-research-digest."""

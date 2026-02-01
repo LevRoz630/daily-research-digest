@@ -152,7 +152,7 @@ def get_llm_for_provider(
         except ImportError as e:
             raise ImportError(
                 "langchain-anthropic not installed. "
-                "Install with: pip install arxiv-digest[anthropic]"
+                "Install with: pip install daily-research-digest[anthropic]"
             ) from e
 
     elif provider == "openai":
@@ -168,7 +168,8 @@ def get_llm_for_provider(
             )
         except ImportError as e:
             raise ImportError(
-                "langchain-openai not installed. Install with: pip install arxiv-digest[openai]"
+                "langchain-openai not installed. "
+                "Install with: pip install daily-research-digest[openai]"
             ) from e
 
     elif provider == "google":
@@ -187,7 +188,7 @@ def get_llm_for_provider(
         except ImportError as e:
             raise ImportError(
                 "langchain-google-genai not installed. "
-                "Install with: pip install arxiv-digest[google]"
+                "Install with: pip install daily-research-digest[google]"
             ) from e
 
     else:

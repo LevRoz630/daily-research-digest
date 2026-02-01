@@ -1,0 +1,253 @@
+"""Tests for daily_research_digest.digest_renderer module."""
+
+from datetime import datetime, timezone
+
+import pytest
+
+from daily_research_digest.digest_renderer import Digest, _escape_html, _score_color, render_digest
+from daily_research_digest.models import Paper
+
+
+@pytest.fixture
+def sample_papers() -> list[Paper]:
+    """Return sample papers for testing."""
+    return [
+        Paper(
+            arxiv_id="2401.00001",
+            title="High Score Paper",
+            abstract="Abstract for high score paper.",
+            authors=["Alice Smith", "Bob Johnson"],
+            categories=["cs.AI"],
+            published="2024-01-15T00:00:00Z",
+            updated="2024-01-15T00:00:00Z",
+            link="https://arxiv.org/abs/2401.00001",
+            relevance_score=9.5,
+            relevance_reason="Highly relevant to AI research",
+        ),
+        Paper(
+            arxiv_id="2401.00002",
+            title="Medium Score Paper",
+            abstract="Abstract for medium score paper.",
+            authors=["Carol Williams", "David Brown", "Eve Davis", "Frank Miller"],
+            categories=["cs.LG"],
+            published="2024-01-14T00:00:00Z",
+            updated="2024-01-14T00:00:00Z",
+            link="https://arxiv.org/abs/2401.00002",
+            relevance_score=6.5,
+            relevance_reason="Somewhat relevant",
+        ),
+        Paper(
+            arxiv_id="2401.00003",
+            title="Low Score Paper",
+            abstract="Abstract for low score paper.",
+            authors=["Grace Lee"],
+            categories=["cs.CV"],
+            published="2024-01-13T00:00:00Z",
+            updated="2024-01-13T00:00:00Z",
+            link="https://arxiv.org/abs/2401.00003",
+            relevance_score=3.0,
+            relevance_reason="Limited relevance",
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_digest(sample_papers: list[Paper]) -> Digest:
+    """Return sample digest for testing."""
+    return Digest(
+        items=sample_papers,
+        window_start=datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc),
+        window_end=datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc),
+        categories=["cs.AI", "cs.LG"],
+        interests="machine learning and AI research",
+        total_fetched=50,
+    )
+
+
+class TestRenderDigest:
+    """Tests for render_digest function."""
+
+    def test_returns_tuple(self, sample_digest: Digest) -> None:
+        """Test returns tuple of (text, html)."""
+        result = render_digest(sample_digest)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert isinstance(result[0], str)
+        assert isinstance(result[1], str)
+
+    def test_text_contains_header(self, sample_digest: Digest) -> None:
+        """Test text body contains header."""
+        text, _ = render_digest(sample_digest)
+        assert "Daily Research Digest" in text
+        assert "=" * 60 in text
+
+    def test_text_contains_window_info(self, sample_digest: Digest) -> None:
+        """Test text body contains window information."""
+        text, _ = render_digest(sample_digest)
+        assert "2024-01-14" in text
+        assert "2024-01-15" in text
+        assert "cs.AI" in text
+        assert "cs.LG" in text
+
+    def test_text_contains_papers(self, sample_digest: Digest) -> None:
+        """Test text body contains paper information."""
+        text, _ = render_digest(sample_digest)
+        assert "High Score Paper" in text
+        assert "Medium Score Paper" in text
+        assert "Low Score Paper" in text
+        assert "9.5/10" in text
+        assert "6.5/10" in text
+        assert "3.0/10" in text
+
+    def test_text_contains_authors(self, sample_digest: Digest) -> None:
+        """Test text body contains author names."""
+        text, _ = render_digest(sample_digest)
+        assert "Alice Smith" in text
+        assert "Bob Johnson" in text
+
+    def test_text_truncates_many_authors(self, sample_digest: Digest) -> None:
+        """Test text truncates when many authors."""
+        text, _ = render_digest(sample_digest)
+        # Paper 2 has 4 authors, should show first 3 + "+1 more"
+        assert "+1 more" in text
+
+    def test_text_contains_links(self, sample_digest: Digest) -> None:
+        """Test text body contains paper links."""
+        text, _ = render_digest(sample_digest)
+        assert "https://arxiv.org/abs/2401.00001" in text
+        assert "https://arxiv.org/abs/2401.00002" in text
+
+    def test_text_contains_reasons(self, sample_digest: Digest) -> None:
+        """Test text body contains relevance reasons."""
+        text, _ = render_digest(sample_digest)
+        assert "Highly relevant to AI research" in text
+        assert "Somewhat relevant" in text
+
+    def test_text_contains_footer(self, sample_digest: Digest) -> None:
+        """Test text body contains footer."""
+        text, _ = render_digest(sample_digest)
+        assert "Generated by Daily Research Digest" in text
+
+    def test_html_valid_structure(self, sample_digest: Digest) -> None:
+        """Test HTML has valid structure."""
+        _, html = render_digest(sample_digest)
+        assert "<!DOCTYPE html>" in html
+        assert "<html>" in html
+        assert "</html>" in html
+        assert "<body" in html
+        assert "</body>" in html
+
+    def test_html_contains_papers(self, sample_digest: Digest) -> None:
+        """Test HTML contains paper information."""
+        _, html = render_digest(sample_digest)
+        assert "High Score Paper" in html
+        assert "Medium Score Paper" in html
+        assert "https://arxiv.org/abs/2401.00001" in html
+
+    def test_html_contains_scores(self, sample_digest: Digest) -> None:
+        """Test HTML contains score badges."""
+        _, html = render_digest(sample_digest)
+        assert "9.5/10" in html
+        assert "6.5/10" in html
+        assert "3.0/10" in html
+
+    def test_html_contains_categories(self, sample_digest: Digest) -> None:
+        """Test HTML contains category info."""
+        _, html = render_digest(sample_digest)
+        assert "cs.AI" in html
+        assert "cs.LG" in html
+
+    def test_html_contains_interests(self, sample_digest: Digest) -> None:
+        """Test HTML contains interests."""
+        _, html = render_digest(sample_digest)
+        assert "machine learning and AI research" in html
+
+
+class TestRenderEmptyDigest:
+    """Tests for rendering empty digest."""
+
+    @pytest.fixture
+    def empty_digest(self) -> Digest:
+        """Return empty digest for testing."""
+        return Digest(
+            items=[],
+            window_start=datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc),
+            window_end=datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc),
+            categories=["cs.AI"],
+            interests="AI research",
+            total_fetched=0,
+        )
+
+    def test_text_handles_empty(self, empty_digest: Digest) -> None:
+        """Test text body handles no papers."""
+        text, _ = render_digest(empty_digest)
+        assert "No relevant papers found" in text
+
+    def test_html_handles_empty(self, empty_digest: Digest) -> None:
+        """Test HTML handles no papers."""
+        _, html = render_digest(empty_digest)
+        assert "No relevant papers found" in html
+
+
+class TestScoreColor:
+    """Tests for _score_color function."""
+
+    def test_high_score_green(self) -> None:
+        """Test high scores get green color."""
+        assert _score_color(10.0) == "#28a745"
+        assert _score_color(9.0) == "#28a745"
+        assert _score_color(8.0) == "#28a745"
+
+    def test_medium_high_score_blue(self) -> None:
+        """Test medium-high scores get blue color."""
+        assert _score_color(7.9) == "#17a2b8"
+        assert _score_color(7.0) == "#17a2b8"
+        assert _score_color(6.0) == "#17a2b8"
+
+    def test_medium_score_yellow(self) -> None:
+        """Test medium scores get yellow color."""
+        assert _score_color(5.9) == "#ffc107"
+        assert _score_color(5.0) == "#ffc107"
+        assert _score_color(4.0) == "#ffc107"
+
+    def test_low_score_gray(self) -> None:
+        """Test low scores get gray color."""
+        assert _score_color(3.9) == "#6c757d"
+        assert _score_color(2.0) == "#6c757d"
+        assert _score_color(1.0) == "#6c757d"
+
+
+class TestEscapeHtml:
+    """Tests for _escape_html function."""
+
+    def test_escapes_ampersand(self) -> None:
+        """Test ampersand is escaped."""
+        assert _escape_html("A & B") == "A &amp; B"
+
+    def test_escapes_less_than(self) -> None:
+        """Test less than is escaped."""
+        assert _escape_html("A < B") == "A &lt; B"
+
+    def test_escapes_greater_than(self) -> None:
+        """Test greater than is escaped."""
+        assert _escape_html("A > B") == "A &gt; B"
+
+    def test_escapes_double_quote(self) -> None:
+        """Test double quote is escaped."""
+        assert _escape_html('Say "hello"') == "Say &quot;hello&quot;"
+
+    def test_escapes_single_quote(self) -> None:
+        """Test single quote is escaped."""
+        assert _escape_html("It's") == "It&#39;s"
+
+    def test_escapes_multiple(self) -> None:
+        """Test multiple characters are escaped."""
+        result = _escape_html('<script>alert("XSS")</script>')
+        assert "<" not in result
+        assert ">" not in result
+        assert '"' not in result
+
+    def test_preserves_normal_text(self) -> None:
+        """Test normal text is unchanged."""
+        text = "Normal text without special chars"
+        assert _escape_html(text) == text

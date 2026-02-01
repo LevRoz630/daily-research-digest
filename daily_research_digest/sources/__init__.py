@@ -1,4 +1,4 @@
-"""Paper sources for arxiv-digest."""
+"""Paper sources for daily-research-digest."""
 
 from .huggingface import HuggingFaceClient
 from .semantic_scholar import SemanticScholarClient

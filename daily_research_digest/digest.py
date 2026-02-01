@@ -40,9 +40,7 @@ class DigestGenerator:
         self.memory = memory
         self.state = DigestState()
 
-    def _add_unique_papers(
-        self, papers: list, new_papers: list, seen_ids: set[str]
-    ) -> int:
+    def _add_unique_papers(self, papers: list, new_papers: list, seen_ids: set[str]) -> int:
         """Add papers not already in seen_ids. Returns count added."""
         added = 0
         for p in new_papers:

@@ -1,6 +1,6 @@
-"""Tests for arxiv_digest.models module."""
+"""Tests for daily_research_digest.models module."""
 
-from arxiv_digest.models import DateFilter, DigestConfig, DigestState, Paper
+from daily_research_digest.models import DateFilter, DigestConfig, DigestState, Paper
 
 
 class TestPaper:

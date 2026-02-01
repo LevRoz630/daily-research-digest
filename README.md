@@ -1,31 +1,32 @@
-# ArXiv Digest
+# Daily Research Digest
 
-AI-powered arXiv paper digest with LLM-based ranking and automatic scheduling.
+AI-powered research paper digest with LLM-based ranking and automatic scheduling. Fetches papers from arXiv, HuggingFace Daily Papers, and Semantic Scholar.
 
 ## Features
 
-- Fetch recent papers from arXiv by category
+- Fetch recent papers from multiple sources (arXiv, HuggingFace, Semantic Scholar)
 - Rank papers by relevance using LLMs (Anthropic, OpenAI, or Google)
 - Generate daily digests with top relevant papers
 - Background scheduler for automated digest generation
+- Email digest delivery via SMTP (GitHub Actions compatible)
 - Store digests as JSON files with date-based organization
 
 ## Installation
 
 ```bash
 # Basic installation
-pip install arxiv-digest
+pip install daily-research-digest
 
 # With specific LLM provider
-pip install arxiv-digest[anthropic]  # For Claude
-pip install arxiv-digest[openai]     # For GPT
-pip install arxiv-digest[google]     # For Gemini
+pip install daily-research-digest[anthropic]  # For Claude
+pip install daily-research-digest[openai]     # For GPT
+pip install daily-research-digest[google]     # For Gemini
 
 # With all providers
-pip install arxiv-digest[all]
+pip install daily-research-digest[all]
 
 # Development installation
-pip install arxiv-digest[dev]
+pip install daily-research-digest[dev]
 ```
 
 ## Quick Start
@@ -33,7 +34,7 @@ pip install arxiv-digest[dev]
 ```python
 import asyncio
 from pathlib import Path
-from arxiv_digest import (
+from daily_research_digest import (
     ArxivClient,
     DigestConfig,
     DigestGenerator,
@@ -78,7 +79,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from arxiv_digest import ArxivScheduler, DigestGenerator, DigestStorage, DigestConfig
+from daily_research_digest import ArxivScheduler, DigestGenerator, DigestStorage, DigestConfig
 from pathlib import Path
 
 config = DigestConfig(
@@ -105,6 +106,90 @@ async def run_scheduler():
 
 asyncio.run(run_scheduler())
 ```
+
+## GitHub Actions Cron Usage
+
+Send daily digest emails using GitHub Actions. The digest runner supports:
+
+- Configurable time windows (24h, 48h, 7d)
+- Idempotent execution (won't re-send on workflow reruns)
+- Multiple LLM providers
+- SMTP email delivery
+- Structured JSON logging
+
+### Quick Setup
+
+1. **Add repository secrets** (Settings > Secrets and variables > Actions):
+
+   | Secret | Required | Description |
+   |--------|----------|-------------|
+   | `DIGEST_RECIPIENTS` | Yes | Comma-separated email addresses |
+   | `SMTP_HOST` | Yes | SMTP server hostname |
+   | `SMTP_USER` | No | SMTP username |
+   | `SMTP_PASS` | No | SMTP password |
+   | `ANTHROPIC_API_KEY` | Yes* | Anthropic API key |
+   | `OPENAI_API_KEY` | Alt | OpenAI API key |
+   | `GOOGLE_API_KEY` | Alt | Google API key |
+
+   *Required if using Anthropic (default). Use OpenAI or Google key with corresponding `LLM_PROVIDER`.
+
+2. **Add repository variables** (optional, for customization):
+
+   | Variable | Default | Description |
+   |----------|---------|-------------|
+   | `DIGEST_CATEGORIES` | `cs.AI,cs.LG,cs.CL` | arXiv categories |
+   | `DIGEST_INTERESTS` | `machine learning...` | Research interests |
+   | `DIGEST_SUBJECT` | `Daily Research Digest - {date}` | Email subject |
+   | `DIGEST_TZ` | `UTC` | Timezone |
+   | `DIGEST_WINDOW` | `24h` | Time window |
+   | `LLM_PROVIDER` | `anthropic` | LLM provider |
+
+3. **Enable the workflow**: The `.github/workflows/digest.yml` file runs daily at 6 AM UTC.
+
+### Manual Trigger
+
+You can manually trigger the digest from the Actions tab using "Run workflow".
+
+### CLI Usage
+
+Run the digest sender locally:
+
+```bash
+# Set required environment variables
+export DIGEST_RECIPIENTS="you@example.com"
+export DIGEST_CATEGORIES="cs.AI,cs.LG"
+export DIGEST_INTERESTS="machine learning, AI agents"
+export SMTP_HOST="smtp.gmail.com"
+export SMTP_USER="your-email@gmail.com"
+export SMTP_PASS="your-app-password"
+export ANTHROPIC_API_KEY="your-api-key"
+
+# Run the digest sender
+python -m daily_research_digest.digest_send
+```
+
+### Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DIGEST_RECIPIENTS` | Yes | - | Comma-separated email addresses |
+| `DIGEST_CATEGORIES` | Yes | - | Comma-separated arXiv categories |
+| `DIGEST_INTERESTS` | Yes | - | Research interests for ranking |
+| `DIGEST_SUBJECT` | No | `Daily Research Digest - {date}` | Email subject (supports `{date}`) |
+| `DIGEST_FROM` | No | `noreply@example.com` | Sender address |
+| `DIGEST_TZ` | No | `UTC` | Timezone for window calculation |
+| `DIGEST_WINDOW` | No | `24h` | Time window (`24h`, `1d`, `48h`, `7d`) |
+| `DIGEST_MAX_PAPERS` | No | `50` | Max papers to fetch |
+| `DIGEST_TOP_N` | No | `10` | Top papers in digest |
+| `SMTP_HOST` | Yes | - | SMTP server hostname |
+| `SMTP_PORT` | No | `587` | SMTP server port |
+| `SMTP_USER` | No | - | SMTP username |
+| `SMTP_PASS` | No | - | SMTP password |
+| `SMTP_TLS` | No | `true` | Use TLS (`true`/`false`) |
+| `LLM_PROVIDER` | No | `anthropic` | `anthropic`, `openai`, or `google` |
+| `ANTHROPIC_API_KEY` | * | - | Required for anthropic provider |
+| `OPENAI_API_KEY` | * | - | Required for openai provider |
+| `GOOGLE_API_KEY` | * | - | Required for google provider |
 
 ## Configuration
 
@@ -218,8 +303,8 @@ scheduler.stop()
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/arxiv-digest.git
-cd arxiv-digest
+git clone https://github.com/LevRoz630/daily-research-digest.git
+cd daily-research-digest
 
 # Install with dev dependencies
 pip install -e ".[dev,all]"
@@ -228,13 +313,13 @@ pip install -e ".[dev,all]"
 pytest
 
 # Format code
-black arxiv_digest tests
+black daily_research_digest tests
 
 # Lint
-ruff arxiv_digest tests
+ruff daily_research_digest tests
 
 # Type check
-mypy arxiv_digest
+mypy daily_research_digest
 ```
 
 ## License

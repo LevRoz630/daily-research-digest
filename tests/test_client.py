@@ -1,12 +1,12 @@
-"""Tests for arxiv_digest.client module."""
+"""Tests for daily_research_digest.client module."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
-from arxiv_digest.client import ArxivClient
-from arxiv_digest.models import DateFilter, Paper
+from daily_research_digest.client import ArxivClient
+from daily_research_digest.models import DateFilter, Paper
 
 
 class TestArxivClient:

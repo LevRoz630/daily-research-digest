@@ -30,7 +30,7 @@ jobs:
         run: black --check .
 
       - name: Run mypy
-        run: mypy arxiv_digest
+        run: mypy daily_research_digest
 
   test:
     name: Test (Python ${{ matrix.python-version }})
