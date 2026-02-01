@@ -27,12 +27,14 @@ class HuggingFaceClient:
         """Fetch papers from HuggingFace Daily Papers.
 
         Args:
-            limit: Maximum number of papers to fetch
+            limit: Maximum number of papers to fetch (capped at 50 by API)
 
         Returns:
             List of Paper objects
         """
         papers: list[Paper] = []
+        # HuggingFace API doesn't accept limit > 50
+        limit = min(limit, 50)
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
