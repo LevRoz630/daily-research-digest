@@ -152,7 +152,8 @@ class SemanticScholarClient:
                     continue
 
                 response.raise_for_status()
-                return response.json()
+                result: dict = response.json()
+                return result
 
         # All retries failed
         if last_error:
