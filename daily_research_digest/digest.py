@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 from .models import DigestConfig, DigestState, Paper
 from .quality import compute_quality_scores
 from .ranker import PaperRanker, get_llm_for_provider
-from .sources.huggingface import HuggingFaceClient
 from .sources.semantic_scholar import SemanticScholarClient
 from .storage import DigestStorage
 
@@ -88,14 +87,7 @@ class DigestGenerator:
             self._add_unique_papers(papers, ss_papers, seen_ids)
             logger.info(f"Fetched {len(ss_papers)} papers from Semantic Scholar")
 
-            # Fetch from HuggingFace (with upvotes)
-            logger.info("Fetching papers from HuggingFace Daily Papers")
-            hf_client = HuggingFaceClient()
-            hf_papers = await hf_client.fetch_papers(limit=config.max_papers)
-            added = self._add_unique_papers(papers, hf_papers, seen_ids)
-            logger.info(f"Added {added} unique papers from HuggingFace")
-
-            logger.info(f"Total papers from all sources: {len(papers)}")
+            logger.info(f"Total papers: {len(papers)}")
 
             if not papers:
                 self.state.errors.append("No papers fetched from any source")

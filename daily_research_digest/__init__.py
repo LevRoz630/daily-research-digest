@@ -12,11 +12,10 @@ from .models import DateFilter, DigestConfig, DigestState, Paper
 from .quality import compute_quality_score, compute_quality_scores
 from .ranker import PaperRanker, get_llm_for_provider
 from .scheduler import ArxivScheduler
-from .sources.huggingface import HuggingFaceClient
 from .sources.semantic_scholar import SemanticScholarClient
 from .storage import DigestStorage
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Core
@@ -27,7 +26,6 @@ __all__ = [
     "DigestGenerator",
     "DigestState",
     "DigestStorage",
-    "HuggingFaceClient",
     "Paper",
     "PaperMemory",
     "PaperRanker",

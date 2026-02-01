@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "daily-research-digest"
-version = "0.2.0"
+version = "0.3.0"
 description = "AI-powered research paper digest with LLM-based ranking, quality scoring, and scheduling"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Your Name", email = "your.email@example.com" },
 ]
-keywords = ["arxiv", "papers", "digest", "llm", "ai", "research", "semantic-scholar", "huggingface", "h-index", "quality-scoring"]
+keywords = ["arxiv", "papers", "digest", "llm", "ai", "research", "semantic-scholar", "h-index", "quality-scoring"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",

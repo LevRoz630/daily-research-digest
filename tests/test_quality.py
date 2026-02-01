@@ -31,46 +31,30 @@ class TestComputeQualityScore:
         # Should equal base relevance score (no boost)
         assert score == 7.0
 
-    def test_with_h_index_only(self, sample_paper: Paper) -> None:
-        """Test score with h-index but no upvotes."""
+    def test_with_h_index(self, sample_paper: Paper) -> None:
+        """Test score with h-index."""
         sample_paper.author_h_indices = [50, 50]  # avg 50, normalized to 0.5
         score = compute_quality_score(sample_paper, max_h_index=100.0)
-        # boost = 0.1 * 0.5 + 0 = 0.05
-        # final = 7 * (1 + 0.05) = 7.35
-        assert score == pytest.approx(7.35)
+        # boost = 0.15 * 0.5 = 0.075
+        # final = 7 * (1 + 0.075) = 7.525
+        assert score == pytest.approx(7.525)
 
-    def test_with_upvotes_only(self, sample_paper: Paper) -> None:
-        """Test score with upvotes but no h-index."""
-        sample_paper.huggingface_upvotes = 50
-        score = compute_quality_score(sample_paper, max_upvotes=100.0)
-        # boost = 0 + 0.1 * 0.5 = 0.05
-        # final = 7 * (1 + 0.05) = 7.35
-        assert score == pytest.approx(7.35)
-
-    def test_with_both_signals(self, sample_paper: Paper) -> None:
-        """Test score with both h-index and upvotes."""
+    def test_with_max_h_index(self, sample_paper: Paper) -> None:
+        """Test score with max h-index."""
         sample_paper.author_h_indices = [100]  # normalized to 1.0
-        sample_paper.huggingface_upvotes = 100  # normalized to 1.0
-        score = compute_quality_score(sample_paper, max_h_index=100.0, max_upvotes=100.0)
-        # boost = 0.1 * 1.0 + 0.1 * 1.0 = 0.2
-        # final = 7 * (1 + 0.2) = 8.4
-        assert score == pytest.approx(8.4)
+        score = compute_quality_score(sample_paper, max_h_index=100.0)
+        # boost = 0.15 * 1.0 = 0.15
+        # final = 7 * (1 + 0.15) = 8.05
+        assert score == pytest.approx(8.05)
 
-    def test_max_boost_is_20_percent(self, sample_paper: Paper) -> None:
-        """Test that max boost is 20%."""
+    def test_max_boost_is_15_percent(self, sample_paper: Paper) -> None:
+        """Test that max boost is 15%."""
         sample_paper.relevance_score = 10.0
         sample_paper.author_h_indices = [200]  # > max, capped to 1.0
-        sample_paper.huggingface_upvotes = 200  # > max, capped to 1.0
-        score = compute_quality_score(sample_paper, max_h_index=100.0, max_upvotes=100.0)
-        # boost capped at 0.2
-        # final = 10 * 1.2 = 12.0
-        assert score == pytest.approx(12.0)
-
-    def test_zero_upvotes_no_boost(self, sample_paper: Paper) -> None:
-        """Test that zero upvotes gives no upvotes boost."""
-        sample_paper.huggingface_upvotes = 0
-        score = compute_quality_score(sample_paper)
-        assert score == 7.0
+        score = compute_quality_score(sample_paper, max_h_index=100.0)
+        # boost capped at 0.15
+        # final = 10 * 1.15 = 11.5
+        assert score == pytest.approx(11.5)
 
 
 class TestComputeQualityScores:
@@ -119,10 +103,10 @@ class TestComputeQualityScores:
         compute_quality_scores(papers)
         # Paper 1 has h-index 100 (max), normalized to 1.0
         # Paper 2 has h-index 50, normalized to 0.5
-        # Paper 1 boost = 0.1 * 1.0 = 0.1, final = 5 * 1.1 = 5.5
-        # Paper 2 boost = 0.1 * 0.5 = 0.05, final = 5 * 1.05 = 5.25
-        assert papers[0].quality_score == pytest.approx(5.5)
-        assert papers[1].quality_score == pytest.approx(5.25)
+        # Paper 1 boost = 0.15 * 1.0 = 0.15, final = 5 * 1.15 = 5.75
+        # Paper 2 boost = 0.15 * 0.5 = 0.075, final = 5 * 1.075 = 5.375
+        assert papers[0].quality_score == pytest.approx(5.75)
+        assert papers[1].quality_score == pytest.approx(5.375)
 
     def test_handles_missing_signals(self) -> None:
         """Test that papers with missing signals still work."""

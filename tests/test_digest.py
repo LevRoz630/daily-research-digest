@@ -41,21 +41,15 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        # Mock the Semantic Scholar and HuggingFace clients
+        # Mock the Semantic Scholar client
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
@@ -84,16 +78,10 @@ class TestDigestGenerator:
 
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls:
+        ) as mock_ss_cls:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=[])
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             result = await generator.generate(sample_config)
 
@@ -170,17 +158,11 @@ class TestDigestGenerator:
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
@@ -214,17 +196,11 @@ class TestDigestGenerator:
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
@@ -257,17 +233,11 @@ class TestDigestGenerator:
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
@@ -311,17 +281,11 @@ class TestDigestGenerator:
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
@@ -359,16 +323,10 @@ class TestDigestGenerator:
 
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls:
+        ) as mock_ss_cls:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             result = await generator.generate(sample_config)
 
@@ -397,17 +355,11 @@ class TestDigestGenerator:
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
         ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.HuggingFaceClient"
-        ) as mock_hf_cls, patch(
             "daily_research_digest.digest.get_llm_for_provider"
         ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
-
-            mock_hf = MagicMock()
-            mock_hf.fetch_papers = AsyncMock(return_value=[])
-            mock_hf_cls.return_value = mock_hf
 
             mock_llm = MagicMock()
 
