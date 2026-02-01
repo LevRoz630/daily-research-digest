@@ -69,7 +69,9 @@ class SemanticScholarClient:
             headers["x-api-key"] = self.api_key
 
         try:
+            print(f"Querying Semantic Scholar with: {params['query']}")
             data = await self._fetch_with_retry(params, headers)
+            print(f"Semantic Scholar returned {len(data.get('data', []))} results")
 
             for item in data.get("data", []):
                 # Get arxiv ID if available

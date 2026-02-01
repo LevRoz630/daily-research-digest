@@ -90,7 +90,7 @@ Interests: {config.interests}
 Keywords:"""
             keyword_response = await llm.ainvoke(keyword_prompt)
             search_query = keyword_response.content.strip()
-            logger.info(f"Extracted search keywords: {search_query}")
+            print(f"Extracted search keywords: {search_query}")
 
             # Fetch from Semantic Scholar (with h-index)
             ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
@@ -100,7 +100,7 @@ Keywords:"""
                 fields_of_study=["Computer Science"],
             )
             self._add_unique_papers(papers, ss_papers, seen_ids)
-            logger.info(f"Fetched {len(ss_papers)} papers from Semantic Scholar")
+            print(f"Fetched {len(ss_papers)} papers from Semantic Scholar")
 
             logger.info(f"Total papers: {len(papers)}")
 
