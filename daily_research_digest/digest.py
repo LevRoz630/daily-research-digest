@@ -76,10 +76,23 @@ class DigestGenerator:
             papers: list[Paper] = []
             seen_ids: set[str] = set()
 
+            # Extract search keywords from interests using LLM
+            llm = get_llm_for_provider(
+                config.llm_provider,
+                anthropic_api_key=config.anthropic_api_key,
+                openai_api_key=config.openai_api_key,
+                google_api_key=config.google_api_key,
+            )
+            keyword_prompt = f"""Extract 3-5 search keywords from these research interests for querying an academic paper database. Return ONLY the keywords separated by commas, nothing else.
+
+Interests: {config.interests}
+
+Keywords:"""
+            keyword_response = await llm.ainvoke(keyword_prompt)
+            search_query = keyword_response.content.strip()
+            logger.info(f"Extracted search keywords: {search_query}")
+
             # Fetch from Semantic Scholar (with h-index)
-            # Use only the first line of interests as search query (rest may be LLM instructions)
-            search_query = config.interests.split("\n")[0].strip()
-            logger.info(f"Fetching papers from Semantic Scholar with query: {search_query}")
             ss_client = SemanticScholarClient(api_key=config.semantic_scholar_api_key)
             ss_papers = await ss_client.fetch_papers(
                 query=search_query,
@@ -108,14 +121,8 @@ class DigestGenerator:
                     self.state.errors.append("No unseen papers after filtering")
                     return {"status": "error", "errors": self.state.errors}
 
-            # Rank papers
+            # Rank papers using full interests (including any LLM instructions)
             logger.info(f"Ranking papers against interests: {config.interests[:50]}...")
-            llm = get_llm_for_provider(
-                config.llm_provider,
-                anthropic_api_key=config.anthropic_api_key,
-                openai_api_key=config.openai_api_key,
-                google_api_key=config.google_api_key,
-            )
             ranker = PaperRanker(llm)
             ranked_papers = await ranker.rank_papers(papers, config.interests)
 

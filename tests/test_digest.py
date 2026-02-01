@@ -78,10 +78,23 @@ class TestDigestGenerator:
 
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls:
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=[])
             mock_ss_cls.return_value = mock_ss
+
+            # Mock LLM for keyword extraction
+            mock_llm = MagicMock()
+
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = "machine learning, AI"
+                return response
+
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
 
             result = await generator.generate(sample_config)
 
@@ -323,10 +336,23 @@ class TestDigestGenerator:
 
         with patch(
             "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls:
+        ) as mock_ss_cls, patch(
+            "daily_research_digest.digest.get_llm_for_provider"
+        ) as mock_get_llm:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
+
+            # Mock LLM for keyword extraction
+            mock_llm = MagicMock()
+
+            async def mock_ainvoke(prompt: str) -> MagicMock:
+                response = MagicMock()
+                response.content = "machine learning, AI"
+                return response
+
+            mock_llm.ainvoke = mock_ainvoke
+            mock_get_llm.return_value = mock_llm
 
             result = await generator.generate(sample_config)
 
