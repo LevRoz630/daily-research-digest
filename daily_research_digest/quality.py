@@ -16,7 +16,7 @@ def compute_quality_score(
     """Compute final quality score for a paper.
 
     Formula: final = llm_relevance × (1 + quality_boost)
-    where quality_boost = 0.2 × h_factor + 0.2 × upvotes_factor
+    where quality_boost = 0.1 × h_factor + 0.1 × upvotes_factor
 
     Args:
         paper: Paper with relevance_score, author_h_indices, huggingface_upvotes
@@ -24,7 +24,7 @@ def compute_quality_score(
         max_upvotes: Maximum upvotes for normalization (default 100)
 
     Returns:
-        Final quality score (max 40% boost from quality signals)
+        Final quality score (max 20% boost from quality signals)
     """
     llm_relevance = paper.relevance_score
 
@@ -39,8 +39,8 @@ def compute_quality_score(
     if paper.huggingface_upvotes is not None and paper.huggingface_upvotes > 0:
         upvotes_factor = min(paper.huggingface_upvotes / max_upvotes, 1.0)
 
-    # Quality boost: max 40% (0.2 from h-index + 0.2 from upvotes)
-    quality_boost = 0.2 * h_factor + 0.2 * upvotes_factor
+    # Quality boost: max 20% (0.1 from h-index + 0.1 from upvotes)
+    quality_boost = 0.1 * h_factor + 0.1 * upvotes_factor
 
     return llm_relevance * (1 + quality_boost)
 
