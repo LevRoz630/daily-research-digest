@@ -1,402 +1,86 @@
 # Daily Research Digest
 
-AI-powered research paper digest with LLM-based ranking, quality scoring, and automatic scheduling. Fetches papers from Semantic Scholar and HuggingFace Daily Papers with author credibility signals.
-
-## Features
-
-- **Multi-source paper fetching**: Semantic Scholar (with author h-index) and HuggingFace Daily Papers (with upvotes)
-- **Quality-aware ranking**: Combines LLM relevance scores with author h-index and community upvotes
-- **Smart deduplication**: Merges quality signals when papers appear in multiple sources
-- **LLM-powered relevance**: Rank papers using Anthropic, OpenAI, or Google models
-- **Automatic scheduling**: Background scheduler for daily digest generation
-- **Email delivery**: SMTP-based digest emails (GitHub Actions compatible)
-- **JSON storage**: Date-based organization for easy retrieval
-
-## What's New in v0.2.0
-
-- **Quality Scoring Pipeline**: Papers are now ranked using a combined quality score that factors in:
-  - LLM relevance score (1-10)
-  - Author h-index (from Semantic Scholar)
-  - Community upvotes (from HuggingFace)
-- **Simplified Sources**: Streamlined to Semantic Scholar + HuggingFace (Semantic Scholar indexes arXiv papers)
-- **New Paper Fields**: `author_h_indices`, `huggingface_upvotes`, `quality_score`
-
-### Quality Scoring Formula
-
-```
-final_score = llm_relevance × (1 + quality_boost)
-
-quality_boost = 0.2 × h_factor + 0.2 × upvotes_factor
-```
-
-- `h_factor`: Normalized average author h-index (0-1)
-- `upvotes_factor`: Normalized HuggingFace upvotes (0-1)
-- Maximum 40% boost from quality signals
-- Missing data = no boost (not a penalty)
+AI-powered research paper digest that fetches papers from Semantic Scholar, ranks them by relevance using LLMs, and delivers daily email digests.
 
 ## Installation
 
 ```bash
-# Basic installation
-pip install daily-research-digest
-
-# With specific LLM provider
-pip install daily-research-digest[anthropic]  # For Claude
-pip install daily-research-digest[openai]     # For GPT
-pip install daily-research-digest[google]     # For Gemini
-
-# With all providers
-pip install daily-research-digest[all]
-
-# Development installation
-pip install daily-research-digest[dev]
+pip install daily-research-digest[anthropic]  # or [openai], [google], [all]
 ```
 
 ## Quick Start
 
+### Python API
+
 ```python
 import asyncio
 from pathlib import Path
-from daily_research_digest import (
-    DigestConfig,
-    DigestGenerator,
-    DigestStorage,
-)
+from daily_research_digest import DigestConfig, DigestGenerator, DigestStorage
 
-# Configure digest
 config = DigestConfig(
-    categories=["cs.AI", "cs.CL", "cs.LG"],  # For reference/filtering
-    interests="AI agents, large language models, natural language processing",
-    max_papers=50,
-    top_n=10,
+    categories=[],
+    interests="AI agents, large language models",
+    sources=["semantic_scholar"],
     llm_provider="anthropic",
-    anthropic_api_key="your-api-key-here",
+    anthropic_api_key="your-api-key",
 )
 
-# Set up storage
-storage = DigestStorage(Path("./digests"))
-
-# Create generator
-generator = DigestGenerator(storage)
-
-# Generate digest
 async def main():
+    generator = DigestGenerator(DigestStorage(Path("./digests")))
     result = await generator.generate(config)
-    print(f"Status: {result['status']}")
-
-    if result['status'] == 'completed':
-        digest = result['digest']
-        print(f"Generated digest with {len(digest['papers'])} papers")
-
-        for paper in digest['papers']:
-            score = paper.get('quality_score') or paper['relevance_score']
-            print(f"\n{score:.1f} - {paper['title']}")
-            print(f"  {paper['link']}")
-
-            # Show quality signals
-            if paper.get('author_h_indices'):
-                avg_h = sum(paper['author_h_indices']) / len(paper['author_h_indices'])
-                print(f"  Avg h-index: {avg_h:.0f}")
-            if paper.get('huggingface_upvotes'):
-                print(f"  HF upvotes: {paper['huggingface_upvotes']}")
-
-            print(f"  Reason: {paper['relevance_reason']}")
+    for paper in result['digest']['papers']:
+        print(f"{paper['relevance_score']:.1f} - {paper['title']}")
 
 asyncio.run(main())
 ```
 
-## Scheduled Digests
-
-```python
-import asyncio
-from daily_research_digest import ArxivScheduler, DigestGenerator, DigestStorage, DigestConfig
-from pathlib import Path
-
-config = DigestConfig(
-    categories=["cs.AI", "cs.LG"],
-    interests="machine learning research",
-    llm_provider="anthropic",
-    anthropic_api_key="your-key",
-)
-
-storage = DigestStorage(Path("./digests"))
-generator = DigestGenerator(storage)
-scheduler = ArxivScheduler(generator, schedule_hour=6)  # 6 AM UTC
-
-async def run_scheduler():
-    # Start scheduler (runs daily at 6 AM UTC)
-    scheduler.start(config)
-
-    # Keep running
-    try:
-        while True:
-            await asyncio.sleep(3600)
-    except KeyboardInterrupt:
-        scheduler.stop()
-
-asyncio.run(run_scheduler())
-```
-
-## GitHub Actions Cron Usage
-
-Send daily digest emails using GitHub Actions. The digest runner supports:
-
-- Configurable time windows (24h, 48h, 7d)
-- Idempotent execution (won't re-send on workflow reruns)
-- Multiple LLM providers
-- SMTP email delivery
-- Structured JSON logging
-
-### Quick Setup
-
-1. **Add repository secrets** (Settings > Secrets and variables > Actions):
-
-   | Secret | Required | Description |
-   |--------|----------|-------------|
-   | `DIGEST_RECIPIENTS` | Yes | Comma-separated email addresses |
-   | `SMTP_HOST` | Yes | SMTP server hostname |
-   | `SMTP_USER` | No | SMTP username |
-   | `SMTP_PASS` | No | SMTP password |
-   | `ANTHROPIC_API_KEY` | Yes* | Anthropic API key |
-   | `OPENAI_API_KEY` | Alt | OpenAI API key |
-   | `GOOGLE_API_KEY` | Alt | Google API key |
-
-   *Required if using Anthropic (default). Use OpenAI or Google key with corresponding `LLM_PROVIDER`.
-
-2. **Add repository variables** (optional, for customization):
-
-   | Variable | Default | Description |
-   |----------|---------|-------------|
-   | `DIGEST_INTERESTS` | `machine learning...` | Research interests for search & ranking |
-   | `DIGEST_SUBJECT` | `Daily Research Digest - {date}` | Email subject |
-   | `DIGEST_TZ` | `UTC` | Timezone |
-   | `DIGEST_WINDOW` | `24h` | Time window |
-   | `LLM_PROVIDER` | `anthropic` | LLM provider |
-
-3. **Enable the workflow**: The `.github/workflows/digest.yml` file runs daily at 6 AM UTC.
-
-### Manual Trigger
-
-You can manually trigger the digest from the Actions tab using "Run workflow".
-
-### CLI Usage
-
-Run the digest sender locally:
+### CLI (Email Digest)
 
 ```bash
-# Set required environment variables
 export DIGEST_RECIPIENTS="you@example.com"
-export DIGEST_INTERESTS="machine learning, AI agents, transformers"
+export DIGEST_INTERESTS="machine learning, AI agents"
 export SMTP_HOST="smtp.gmail.com"
 export SMTP_USER="your-email@gmail.com"
 export SMTP_PASS="your-app-password"
 export ANTHROPIC_API_KEY="your-api-key"
 
-# Run the digest sender
 python -m daily_research_digest.digest_send
 ```
 
-### Environment Variables Reference
+## GitHub Actions
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DIGEST_RECIPIENTS` | Yes | - | Comma-separated email addresses |
-| `DIGEST_INTERESTS` | Yes | - | Research interests for search & ranking |
-| `DIGEST_SUBJECT` | No | `Daily Research Digest - {date}` | Email subject (supports `{date}`) |
-| `DIGEST_FROM` | No | `noreply@example.com` | Sender address |
-| `DIGEST_TZ` | No | `UTC` | Timezone for window calculation |
-| `DIGEST_WINDOW` | No | `24h` | Time window (`24h`, `1d`, `48h`, `7d`) |
-| `DIGEST_MAX_PAPERS` | No | `50` | Max papers to fetch per source |
-| `DIGEST_TOP_N` | No | `10` | Top papers in digest |
-| `SMTP_HOST` | Yes | - | SMTP server hostname |
-| `SMTP_PORT` | No | `587` | SMTP server port |
-| `SMTP_USER` | No | - | SMTP username |
-| `SMTP_PASS` | No | - | SMTP password |
-| `SMTP_TLS` | No | `true` | Use TLS (`true`/`false`) |
-| `LLM_PROVIDER` | No | `anthropic` | `anthropic`, `openai`, or `google` |
-| `ANTHROPIC_API_KEY` | * | - | Required for anthropic provider |
-| `OPENAI_API_KEY` | * | - | Required for openai provider |
-| `GOOGLE_API_KEY` | * | - | Required for google provider |
+The workflow at `.github/workflows/digest.yml` sends daily emails at 6 AM UTC.
+
+**Required secrets:** `DIGEST_RECIPIENTS`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `ANTHROPIC_API_KEY`
+
+**Optional variables:** `DIGEST_INTERESTS`, `DIGEST_WINDOW` (24h/48h/7d), `LLM_PROVIDER`
 
 ## Configuration
 
-### DigestConfig
-
-- `categories`: List of category codes for reference (e.g., `["cs.AI", "cs.LG"]`)
-- `interests`: Research interests description for search and ranking
-- `max_papers`: Maximum papers to fetch per source (default: 50)
-- `top_n`: Number of top papers to include in digest (default: 10)
-- `llm_provider`: One of "anthropic", "openai", or "google"
-- `priority_authors`: List of author names to boost in ranking
-- `author_boost`: Multiplier for priority author papers (default: 1.5)
-- API keys for your chosen provider
+| Option | Default | Description |
+|--------|---------|-------------|
+| `interests` | - | Research interests for search and ranking |
+| `max_papers` | 50 | Max papers to fetch |
+| `top_n` | 10 | Papers in final digest |
+| `llm_provider` | anthropic | `anthropic`, `openai`, or `google` |
 
 ## LLM Providers
 
-The package supports multiple LLM providers for paper ranking:
-
-| Provider | Model | Package Required |
-|----------|-------|------------------|
-| anthropic | claude-3-haiku-20240307 | langchain-anthropic |
-| openai | gpt-3.5-turbo | langchain-openai |
-| google | gemini-1.5-flash | langchain-google-genai |
-
-Each uses fast, cost-effective models optimized for ranking tasks.
-
-## Digest Format
-
-Digests are saved as JSON files with the following structure:
-
-```json
-{
-  "date": "2024-01-15",
-  "generated_at": "2024-01-15T06:00:00Z",
-  "categories": ["cs.AI", "cs.CL"],
-  "interests": "AI agents, LLMs",
-  "total_papers_fetched": 50,
-  "papers": [
-    {
-      "arxiv_id": "2401.12345",
-      "title": "Paper Title",
-      "abstract": "Abstract text...",
-      "authors": ["Author One", "Author Two"],
-      "categories": ["cs.AI", "cs.CL"],
-      "published": "2024-01-14T00:00:00Z",
-      "updated": "2024-01-14T00:00:00Z",
-      "link": "https://arxiv.org/abs/2401.12345",
-      "relevance_score": 9.0,
-      "relevance_reason": "Directly addresses AI agent architectures",
-      "author_h_indices": [45, 32, 28],
-      "huggingface_upvotes": 156,
-      "quality_score": 11.2
-    }
-  ]
-}
-```
-
-### Paper Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `arxiv_id` | string | Paper identifier (arXiv ID or source-specific) |
-| `title` | string | Paper title |
-| `abstract` | string | Paper abstract |
-| `authors` | string[] | List of author names |
-| `categories` | string[] | Paper categories/fields |
-| `published` | string | Publication date (ISO format) |
-| `link` | string | URL to paper |
-| `relevance_score` | float | LLM-assigned relevance (1-10) |
-| `relevance_reason` | string | LLM explanation for score |
-| `author_h_indices` | int[] | h-index for each author (from Semantic Scholar) |
-| `huggingface_upvotes` | int | Community upvotes (from HuggingFace) |
-| `quality_score` | float | Final combined score |
-
-## API Reference
-
-### DigestGenerator
-
-Generates paper digests using the quality scoring pipeline.
-
-```python
-storage = DigestStorage(Path("./digests"))
-generator = DigestGenerator(storage)
-result = await generator.generate(config)
-```
-
-### Quality Scoring
-
-Compute quality scores manually:
-
-```python
-from daily_research_digest import compute_quality_scores
-
-# papers is a list of Paper objects with relevance_score set
-compute_quality_scores(papers)
-
-# Each paper now has quality_score populated
-for paper in papers:
-    print(f"{paper.quality_score:.1f} - {paper.title}")
-```
-
-### SemanticScholarClient
-
-Fetches papers from Semantic Scholar with author h-index.
-
-```python
-from daily_research_digest import SemanticScholarClient
-
-client = SemanticScholarClient(api_key="optional-api-key")
-papers = await client.fetch_papers(
-    query="large language models",
-    limit=50,
-    fields_of_study=["Computer Science"]
-)
-
-for paper in papers:
-    if paper.author_h_indices:
-        avg_h = sum(paper.author_h_indices) / len(paper.author_h_indices)
-        print(f"{paper.title} - avg h-index: {avg_h:.0f}")
-```
-
-### HuggingFaceClient
-
-Fetches trending papers from HuggingFace Daily Papers with upvotes.
-
-```python
-from daily_research_digest import HuggingFaceClient
-
-client = HuggingFaceClient()
-papers = await client.fetch_papers(limit=50)
-
-for paper in papers:
-    if paper.huggingface_upvotes:
-        print(f"{paper.title} - {paper.huggingface_upvotes} upvotes")
-```
-
-### DigestStorage
-
-Manages digest persistence.
-
-```python
-storage = DigestStorage(Path("./digests"))
-storage.save_digest(digest)
-digest = storage.get_digest("2024-01-15")
-dates = storage.list_digests(limit=30)
-```
-
-### ArxivScheduler
-
-Schedules automated digest generation.
-
-```python
-scheduler = ArxivScheduler(generator, schedule_hour=6)
-scheduler.start(config)
-scheduler.stop()
-```
+| Provider | Model |
+|----------|-------|
+| anthropic | claude-3-haiku |
+| openai | gpt-3.5-turbo |
+| google | gemini-1.5-flash |
 
 ## Development
 
 ```bash
-# Clone repository
 git clone https://github.com/LevRoz630/daily-research-digest.git
 cd daily-research-digest
-
-# Install with dev dependencies
 pip install -e ".[dev,all]"
-
-# Run tests
 pytest
-
-# Format code
-black daily_research_digest tests
-
-# Lint
-ruff daily_research_digest tests
-
-# Type check
-mypy daily_research_digest
 ```
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT
