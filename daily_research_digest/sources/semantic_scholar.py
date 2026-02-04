@@ -55,7 +55,7 @@ class SemanticScholarClient:
         params = {
             "query": query,
             "limit": min(limit, 100),  # API max is 100
-            "fields": "paperId,externalIds,title,abstract,authors,authors.hIndex,year,fieldsOfStudy",
+            "fields": "paperId,externalIds,title,abstract,authors,authors.hIndex,year,fieldsOfStudy",  # noqa: E501
         }
 
         if fields_of_study:

@@ -9,12 +9,12 @@ import pytest
 
 from daily_research_digest.digest import DigestGenerator
 from daily_research_digest.models import DigestConfig
-from daily_research_digest.scheduler import ArxivScheduler
+from daily_research_digest.scheduler import DigestScheduler
 from daily_research_digest.storage import DigestStorage
 
 
-class TestArxivScheduler:
-    """Tests for the ArxivScheduler class."""
+class TestDigestScheduler:
+    """Tests for the DigestScheduler class."""
 
     @pytest.fixture
     def generator(self, temp_storage_dir: Path) -> DigestGenerator:
@@ -24,13 +24,13 @@ class TestArxivScheduler:
 
     def test_init_default_hour(self, generator: DigestGenerator) -> None:
         """Test scheduler initializes with default hour."""
-        scheduler = ArxivScheduler(generator)
+        scheduler = DigestScheduler(generator)
         assert scheduler.schedule_hour == 6
         assert scheduler.is_running is False
 
     def test_init_custom_hour(self, generator: DigestGenerator) -> None:
         """Test scheduler initializes with custom hour."""
-        scheduler = ArxivScheduler(generator, schedule_hour=12)
+        scheduler = DigestScheduler(generator, schedule_hour=12)
         assert scheduler.schedule_hour == 12
 
     @pytest.mark.asyncio
@@ -38,7 +38,7 @@ class TestArxivScheduler:
         self, generator: DigestGenerator, sample_config: DigestConfig
     ) -> None:
         """Test starting and stopping the scheduler."""
-        scheduler = ArxivScheduler(generator)
+        scheduler = DigestScheduler(generator)
 
         assert scheduler.is_running is False
 
@@ -54,7 +54,7 @@ class TestArxivScheduler:
         self, generator: DigestGenerator, sample_config: DigestConfig
     ) -> None:
         """Test starting with schedule_hour override."""
-        scheduler = ArxivScheduler(generator, schedule_hour=6)
+        scheduler = DigestScheduler(generator, schedule_hour=6)
 
         scheduler.start(sample_config, schedule_hour=18)
         assert scheduler.schedule_hour == 18
@@ -66,7 +66,7 @@ class TestArxivScheduler:
         self, generator: DigestGenerator, sample_config: DigestConfig
     ) -> None:
         """Test that calling start multiple times is safe."""
-        scheduler = ArxivScheduler(generator)
+        scheduler = DigestScheduler(generator)
 
         scheduler.start(sample_config)
         task1 = scheduler._task
@@ -81,7 +81,7 @@ class TestArxivScheduler:
 
     def test_seconds_until_next_run_future(self, generator: DigestGenerator) -> None:
         """Test calculation when scheduled time is in the future."""
-        scheduler = ArxivScheduler(generator, schedule_hour=23)
+        scheduler = DigestScheduler(generator, schedule_hour=23)
 
         # Mock current time to be early in the day
         with patch("daily_research_digest.scheduler.datetime") as mock_dt:
@@ -97,7 +97,7 @@ class TestArxivScheduler:
 
     def test_seconds_until_next_run_past(self, generator: DigestGenerator) -> None:
         """Test calculation when scheduled time has passed today."""
-        scheduler = ArxivScheduler(generator, schedule_hour=6)
+        scheduler = DigestScheduler(generator, schedule_hour=6)
 
         # Mock current time to be after schedule hour
         with patch("daily_research_digest.scheduler.datetime") as mock_dt:
@@ -115,7 +115,7 @@ class TestArxivScheduler:
         self, generator: DigestGenerator, sample_config: DigestConfig
     ) -> None:
         """Test is_running property reflects internal state."""
-        scheduler = ArxivScheduler(generator)
+        scheduler = DigestScheduler(generator)
 
         assert scheduler.is_running is False
 
@@ -130,7 +130,7 @@ class TestArxivScheduler:
         self, generator: DigestGenerator, sample_config: DigestConfig
     ) -> None:
         """Test that the run loop handles cancellation gracefully."""
-        scheduler = ArxivScheduler(generator)
+        scheduler = DigestScheduler(generator)
 
         # Start the scheduler
         scheduler.start(sample_config)

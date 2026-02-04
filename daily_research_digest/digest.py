@@ -75,11 +75,11 @@ class DigestGenerator:
                 openai_api_key=config.openai_api_key,
                 google_api_key=config.google_api_key,
             )
-            keyword_prompt = f"""Extract 3-5 search keywords from these research interests for querying an academic paper database. Return ONLY the keywords separated by commas, nothing else.
-
-Interests: {config.interests}
-
-Keywords:"""
+            keyword_prompt = (
+                "Extract 3-5 search keywords from these research interests for "
+                "querying an academic paper database. Return ONLY the keywords "
+                f"separated by commas, nothing else.\n\nInterests: {config.interests}\n\nKeywords:"
+            )
             keyword_response = await llm.ainvoke(keyword_prompt)
             search_query = keyword_response.content.strip()
             print(f"Extracted search keywords: {search_query}")
