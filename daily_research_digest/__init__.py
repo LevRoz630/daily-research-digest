@@ -1,6 +1,5 @@
 """Daily Research Digest - AI-powered paper digest with LLM-based ranking."""
 
-from .client import ArxivClient
 from .config_env import ConfigError, DigestEmailConfig, SMTPConfig, load_config_from_env
 from .digest import DigestGenerator
 from .digest_renderer import Digest, render_digest
@@ -11,7 +10,7 @@ from .memory import PaperMemory
 from .models import DateFilter, DigestConfig, DigestState, Paper
 from .quality import compute_quality_score, compute_quality_scores
 from .ranker import PaperRanker, get_llm_for_provider
-from .scheduler import ArxivScheduler
+from .scheduler import DigestScheduler
 from .sources.semantic_scholar import SemanticScholarClient
 from .storage import DigestStorage
 
@@ -19,11 +18,10 @@ __version__ = "0.3.0"
 
 __all__ = [
     # Core
-    "ArxivClient",
-    "ArxivScheduler",
     "DateFilter",
     "DigestConfig",
     "DigestGenerator",
+    "DigestScheduler",
     "DigestState",
     "DigestStorage",
     "Paper",

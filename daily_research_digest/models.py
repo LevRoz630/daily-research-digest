@@ -21,9 +21,9 @@ class DateFilter:
 
 @dataclass
 class Paper:
-    """Represents an arXiv paper."""
+    """Represents a research paper."""
 
-    arxiv_id: str
+    arxiv_id: str  # Paper identifier (kept for compatibility)
     title: str
     abstract: str
     authors: list[str]
@@ -34,7 +34,6 @@ class Paper:
     relevance_score: float = 0.0
     relevance_reason: str = ""
     author_h_indices: list[int] | None = None
-    huggingface_upvotes: int | None = None
     quality_score: float | None = None
 
     def to_dict(self) -> dict:
@@ -63,7 +62,7 @@ class DigestConfig:
     exclude_seen: bool = True
     priority_authors: list[str] | None = None
     author_boost: float = 1.5
-    sources: list[str] | None = None  # ["arxiv", "huggingface", "semantic_scholar"]
+    sources: list[str] | None = None  # Currently only ["semantic_scholar"] is supported
     semantic_scholar_api_key: str | None = None
     llm_provider: str = "anthropic"
     anthropic_api_key: str | None = None

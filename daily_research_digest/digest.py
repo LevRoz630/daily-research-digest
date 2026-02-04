@@ -39,21 +39,13 @@ class DigestGenerator:
     def _add_unique_papers(
         self, papers: list[Paper], new_papers: list[Paper], seen_ids: set[str]
     ) -> int:
-        """Add papers not already in seen_ids, merging quality data. Returns count added."""
+        """Add papers not already in seen_ids. Returns count added."""
         added = 0
         for p in new_papers:
             if p.arxiv_id not in seen_ids:
                 papers.append(p)
                 seen_ids.add(p.arxiv_id)
                 added += 1
-            else:
-                # Merge quality data into existing paper
-                existing = next((ep for ep in papers if ep.arxiv_id == p.arxiv_id), None)
-                if existing:
-                    if p.author_h_indices and not existing.author_h_indices:
-                        existing.author_h_indices = p.author_h_indices
-                    if p.huggingface_upvotes and not existing.huggingface_upvotes:
-                        existing.huggingface_upvotes = p.huggingface_upvotes
         return added
 
     async def generate(self, config: DigestConfig) -> dict:

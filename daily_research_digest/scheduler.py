@@ -10,8 +10,8 @@ from .models import DigestConfig
 logger = logging.getLogger(__name__)
 
 
-class ArxivScheduler:
-    """Background scheduler for daily arXiv digest generation."""
+class DigestScheduler:
+    """Background scheduler for daily digest generation."""
 
     def __init__(self, generator: DigestGenerator, schedule_hour: int = 6):
         """Initialize scheduler.
@@ -42,7 +42,7 @@ class ArxivScheduler:
         self._config = config
         self._running = True
         self._task = asyncio.create_task(self._run_loop())
-        logger.info(f"ArXiv scheduler started (daily at {self.schedule_hour}:00 UTC)")
+        logger.info(f"Digest scheduler started (daily at {self.schedule_hour}:00 UTC)")
 
     def stop(self) -> None:
         """Stop the background scheduler."""
@@ -50,7 +50,7 @@ class ArxivScheduler:
         if self._task:
             self._task.cancel()
             self._task = None
-        logger.info("ArXiv scheduler stopped")
+        logger.info("Digest scheduler stopped")
 
     @property
     def is_running(self) -> bool:
@@ -74,17 +74,17 @@ class ArxivScheduler:
             try:
                 # Wait until next scheduled time
                 wait_seconds = self._seconds_until_next_run()
-                logger.info(f"ArXiv scheduler: next run in {wait_seconds / 3600:.1f} hours")
+                logger.info(f"Digest scheduler: next run in {wait_seconds / 3600:.1f} hours")
                 await asyncio.sleep(wait_seconds)
 
                 if self._running and self._config:
-                    logger.info("Running scheduled arXiv digest generation...")
+                    logger.info("Running scheduled digest generation...")
                     result = await self.generator.generate(self._config)
                     logger.info(f"Scheduled digest completed: {result.get('status')}")
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"ArXiv scheduler error: {e}")
+                logger.error(f"Digest scheduler error: {e}")
                 # Sleep a bit before retrying on error
                 await asyncio.sleep(3600)
