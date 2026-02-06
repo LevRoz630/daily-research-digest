@@ -86,7 +86,6 @@ def sample_papers() -> list[Paper]:
 def sample_config() -> DigestConfig:
     """Return a test DigestConfig instance."""
     return DigestConfig(
-        categories=["cs.AI", "cs.LG"],
         interests="machine learning, neural networks, deep learning",
         max_papers=50,
         top_n=10,
@@ -99,7 +98,6 @@ def sample_config() -> DigestConfig:
 def sample_config_with_date_filter() -> DigestConfig:
     """Return a test DigestConfig with date filter."""
     return DigestConfig(
-        categories=["cs.AI"],
         interests="machine learning",
         date_filter=DateFilter(days_back=7),
     )
@@ -175,7 +173,6 @@ def sample_digest() -> dict:
     return {
         "date": "2024-01-15",
         "generated_at": "2024-01-15T10:00:00+00:00",
-        "categories": ["cs.AI", "cs.LG"],
         "interests": "machine learning, neural networks",
         "total_papers_fetched": 50,
         "papers": [

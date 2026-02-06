@@ -15,7 +15,6 @@ class Digest:
     items: list[Paper]
     window_start: datetime
     window_end: datetime
-    categories: list[str]
     interests: str
     summary: str = ""
     total_fetched: int = 0
@@ -49,7 +48,6 @@ def _render_text(digest: Digest) -> str:
     start_str = digest.window_start.strftime("%Y-%m-%d %H:%M %Z")
     end_str = digest.window_end.strftime("%Y-%m-%d %H:%M %Z")
     lines.append(f"Period: {start_str} to {end_str}")
-    lines.append(f"Categories: {', '.join(digest.categories)}")
     lines.append(f"Interests: {digest.interests}")
     lines.append("")
 
@@ -152,7 +150,6 @@ def _render_html(digest: Digest) -> str:
     elif digest.items:
         summary_html = f"<p>Found <strong>{len(digest.items)}</strong> relevant papers.</p>"
 
-    categories_str = ", ".join(digest.categories)
     interests_escaped = _escape_html(digest.interests)
 
     # Build body styles
@@ -192,9 +189,6 @@ def _render_html(digest: Digest) -> str:
 
     <div style="margin-bottom: 25px; padding: 15px; background: #e8f4f8;
                 border-radius: 8px;">
-        <p style="margin: 0 0 8px 0;">
-            <strong>Categories:</strong> {categories_str}
-        </p>
         <p style="margin: 0;">
             <strong>Interests:</strong> {interests_escaped}
         </p>

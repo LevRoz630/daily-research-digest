@@ -15,14 +15,14 @@ def compute_quality_score(
     """Compute final quality score for a paper.
 
     Formula: final = llm_relevance × (1 + quality_boost)
-    where quality_boost = 0.15 × h_factor
+    where quality_boost = 0.35 × h_factor
 
     Args:
         paper: Paper with relevance_score, author_h_indices
         max_h_index: Maximum h-index for normalization (default 100)
 
     Returns:
-        Final quality score (max 15% boost from h-index)
+        Final quality score (max 35% boost from h-index)
     """
     llm_relevance = paper.relevance_score
 
@@ -32,8 +32,8 @@ def compute_quality_score(
         avg_h_index = sum(paper.author_h_indices) / len(paper.author_h_indices)
         h_factor = min(avg_h_index / max_h_index, 1.0)
 
-    # Quality boost: max 15% from h-index
-    quality_boost = 0.15 * h_factor
+    # Quality boost: max 35% from h-index
+    quality_boost = 0.35 * h_factor
 
     return llm_relevance * (1 + quality_boost)
 

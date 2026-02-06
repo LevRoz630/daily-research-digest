@@ -58,7 +58,6 @@ def sample_digest(sample_papers: list[Paper]) -> Digest:
         items=sample_papers,
         window_start=datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc),
         window_end=datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc),
-        categories=["cs.AI", "cs.LG"],
         interests="machine learning and AI research",
         total_fetched=50,
     )
@@ -86,8 +85,6 @@ class TestRenderDigest:
         text, _ = render_digest(sample_digest)
         assert "2024-01-14" in text
         assert "2024-01-15" in text
-        assert "cs.AI" in text
-        assert "cs.LG" in text
 
     def test_text_contains_papers(self, sample_digest: Digest) -> None:
         """Test text body contains paper information."""
@@ -151,12 +148,6 @@ class TestRenderDigest:
         assert "6.5/10" in html
         assert "3.0/10" in html
 
-    def test_html_contains_categories(self, sample_digest: Digest) -> None:
-        """Test HTML contains category info."""
-        _, html = render_digest(sample_digest)
-        assert "cs.AI" in html
-        assert "cs.LG" in html
-
     def test_html_contains_interests(self, sample_digest: Digest) -> None:
         """Test HTML contains interests."""
         _, html = render_digest(sample_digest)
@@ -173,7 +164,6 @@ class TestRenderEmptyDigest:
             items=[],
             window_start=datetime(2024, 1, 14, 6, 0, 0, tzinfo=timezone.utc),
             window_end=datetime(2024, 1, 15, 6, 0, 0, tzinfo=timezone.utc),
-            categories=["cs.AI"],
             interests="AI research",
             total_fetched=0,
         )

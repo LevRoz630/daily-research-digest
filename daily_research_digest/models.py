@@ -54,7 +54,6 @@ class DigestState:
 class DigestConfig:
     """Configuration for digest generation."""
 
-    categories: list[str]
     interests: str
     max_papers: int = 50
     top_n: int = 10

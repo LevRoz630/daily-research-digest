@@ -1,6 +1,6 @@
 # Daily Research Digest
 
-AI-powered research paper digest that fetches papers from Semantic Scholar, ranks them by relevance using LLMs, and delivers daily email digests.
+AI-powered research paper digest that fetches papers from Semantic Scholar and ranks them by relevance using LLMs.
 
 ## Installation
 
@@ -10,15 +10,12 @@ pip install daily-research-digest[anthropic]  # or [openai], [google], [all]
 
 ## Quick Start
 
-### Python API
-
 ```python
 import asyncio
 from pathlib import Path
 from daily_research_digest import DigestConfig, DigestGenerator, DigestStorage
 
 config = DigestConfig(
-    categories=[],
     interests="AI agents, large language models",
     sources=["semantic_scholar"],
     llm_provider="anthropic",
@@ -34,27 +31,6 @@ async def main():
 asyncio.run(main())
 ```
 
-### CLI (Email Digest)
-
-```bash
-export DIGEST_RECIPIENTS="you@example.com"
-export DIGEST_INTERESTS="machine learning, AI agents"
-export SMTP_HOST="smtp.gmail.com"
-export SMTP_USER="your-email@gmail.com"
-export SMTP_PASS="your-app-password"
-export ANTHROPIC_API_KEY="your-api-key"
-
-python -m daily_research_digest.digest_send
-```
-
-## GitHub Actions
-
-The workflow at `.github/workflows/digest.yml` sends daily emails at 6 AM UTC.
-
-**Required secrets:** `DIGEST_RECIPIENTS`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `ANTHROPIC_API_KEY`
-
-**Optional variables:** `DIGEST_INTERESTS`, `DIGEST_WINDOW` (24h/48h/7d), `LLM_PROVIDER`
-
 ## Configuration
 
 | Option | Default | Description |
@@ -62,6 +38,8 @@ The workflow at `.github/workflows/digest.yml` sends daily emails at 6 AM UTC.
 | `interests` | - | Research interests for search and ranking |
 | `max_papers` | 50 | Max papers to fetch |
 | `top_n` | 10 | Papers in final digest |
+| `batch_size` | 25 | Concurrent LLM ranking calls per batch |
+| `batch_delay` | 0.2 | Delay in seconds between ranking batches |
 | `llm_provider` | anthropic | `anthropic`, `openai`, or `google` |
 
 ## LLM Providers

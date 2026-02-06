@@ -100,18 +100,15 @@ class TestDigestConfig:
     """Tests for the DigestConfig dataclass."""
 
     def test_digest_config_required_fields(self) -> None:
-        """Test DigestConfig requires categories and interests."""
+        """Test DigestConfig requires interests."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="machine learning",
         )
-        assert config.categories == ["cs.AI"]
         assert config.interests == "machine learning"
 
     def test_digest_config_defaults(self, sample_config: DigestConfig) -> None:
         """Test DigestConfig has correct default values."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test interests",
         )
         assert config.max_papers == 50
@@ -127,7 +124,6 @@ class TestDigestConfig:
     def test_digest_config_with_date_filter(self) -> None:
         """Test DigestConfig with date_filter."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
             date_filter=DateFilter(days_back=3),
         )
@@ -137,7 +133,6 @@ class TestDigestConfig:
     def test_digest_config_exclude_seen_default(self) -> None:
         """Test DigestConfig.exclude_seen defaults to True."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
         )
         assert config.exclude_seen is True
@@ -145,7 +140,6 @@ class TestDigestConfig:
     def test_digest_config_exclude_seen_false(self) -> None:
         """Test DigestConfig.exclude_seen can be set to False."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
             exclude_seen=False,
         )
@@ -154,7 +148,6 @@ class TestDigestConfig:
     def test_digest_config_priority_authors_default(self) -> None:
         """Test DigestConfig.priority_authors defaults to None."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
         )
         assert config.priority_authors is None
@@ -163,7 +156,6 @@ class TestDigestConfig:
     def test_digest_config_priority_authors(self) -> None:
         """Test DigestConfig with priority authors."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
             priority_authors=["Alice Smith", "Bob Johnson"],
             author_boost=2.0,
@@ -172,9 +164,8 @@ class TestDigestConfig:
         assert config.author_boost == 2.0
 
     def test_digest_config_sources_default(self) -> None:
-        """Test DigestConfig.sources defaults to None (arxiv only)."""
+        """Test DigestConfig.sources defaults to None."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
         )
         assert config.sources is None
@@ -182,8 +173,7 @@ class TestDigestConfig:
     def test_digest_config_sources_multiple(self) -> None:
         """Test DigestConfig with multiple sources."""
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="test",
-            sources=["arxiv", "huggingface"],
+            sources=["semantic_scholar"],
         )
-        assert config.sources == ["arxiv", "huggingface"]
+        assert config.sources == ["semantic_scholar"]

@@ -285,7 +285,6 @@ class TestDigestGenerator:
         generator = DigestGenerator(storage, memory=memory)
 
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="machine learning",
             exclude_seen=False,  # Disable filtering
             anthropic_api_key="test-key",
@@ -371,7 +370,6 @@ class TestDigestGenerator:
 
         # Alice Smith is an author on sample_papers[0]
         config = DigestConfig(
-            categories=["cs.AI"],
             interests="machine learning",
             priority_authors=["Alice Smith"],
             author_boost=2.0,

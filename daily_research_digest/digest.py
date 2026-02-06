@@ -52,7 +52,7 @@ class DigestGenerator:
         """Generate a digest.
 
         Args:
-            config: DigestConfig with categories, interests, etc.
+            config: DigestConfig with interests, max_papers, etc.
 
         Returns:
             Dictionary with status and digest data
@@ -145,7 +145,6 @@ class DigestGenerator:
             digest = {
                 "date": now.strftime("%Y-%m-%d"),
                 "generated_at": now.isoformat(),
-                "categories": config.categories,
                 "interests": config.interests,
                 "total_papers_fetched": len(papers),
                 "papers": [p.to_dict() for p in top_papers],

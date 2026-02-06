@@ -31,7 +31,7 @@ class TestDigestStorage:
         with open(filepath) as f:
             saved = json.load(f)
         assert saved["date"] == sample_digest["date"]
-        assert saved["categories"] == sample_digest["categories"]
+        assert saved["interests"] == sample_digest["interests"]
 
     def test_save_digest_without_date_raises(self, temp_storage_dir: Path) -> None:
         """Test saving digest without date field raises ValueError."""
