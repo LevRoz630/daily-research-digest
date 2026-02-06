@@ -62,6 +62,8 @@ class DigestConfig:
     exclude_seen: bool = True
     priority_authors: list[str] | None = None
     author_boost: float = 1.5
+    batch_size: int = 25
+    batch_delay: float = 0.2
     sources: list[str] | None = None  # Currently only ["semantic_scholar"] is supported
     semantic_scholar_api_key: str | None = None
     llm_provider: str = "anthropic"

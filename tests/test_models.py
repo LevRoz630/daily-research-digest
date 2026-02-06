@@ -116,6 +116,8 @@ class TestDigestConfig:
         )
         assert config.max_papers == 50
         assert config.top_n == 10
+        assert config.batch_size == 25
+        assert config.batch_delay == 0.2
         assert config.date_filter is None
         assert config.llm_provider == "anthropic"
         assert config.anthropic_api_key is None

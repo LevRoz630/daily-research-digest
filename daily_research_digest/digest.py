@@ -115,7 +115,7 @@ class DigestGenerator:
 
             # Rank papers using full interests (including any LLM instructions)
             logger.info(f"Ranking papers against interests: {config.interests[:50]}...")
-            ranker = PaperRanker(llm)
+            ranker = PaperRanker(llm, batch_size=config.batch_size, batch_delay=config.batch_delay)
             ranked_papers = await ranker.rank_papers(papers, config.interests)
 
             # Boost papers from priority authors
