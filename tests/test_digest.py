@@ -42,11 +42,10 @@ class TestDigestGenerator:
         generator = DigestGenerator(storage)
 
         # Mock the Semantic Scholar client
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -76,11 +75,10 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=[])
             mock_ss_cls.return_value = mock_ss
@@ -127,9 +125,7 @@ class TestDigestGenerator:
         storage = DigestStorage(temp_storage_dir)
         generator = DigestGenerator(storage)
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls:
+        with patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls:
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(side_effect=Exception("Test error"))
             mock_ss_cls.return_value = mock_ss
@@ -168,11 +164,10 @@ class TestDigestGenerator:
 
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -206,11 +201,10 @@ class TestDigestGenerator:
         memory = PaperMemory(tmp_path / "memory.json")
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -243,11 +237,10 @@ class TestDigestGenerator:
 
         assert generator.memory is None
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -290,11 +283,10 @@ class TestDigestGenerator:
             anthropic_api_key="test-key",
         )
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -333,11 +325,10 @@ class TestDigestGenerator:
 
         generator = DigestGenerator(storage, memory=memory)
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss
@@ -376,11 +367,10 @@ class TestDigestGenerator:
             anthropic_api_key="test-key",
         )
 
-        with patch(
-            "daily_research_digest.digest.SemanticScholarClient"
-        ) as mock_ss_cls, patch(
-            "daily_research_digest.digest.get_llm_for_provider"
-        ) as mock_get_llm:
+        with (
+            patch("daily_research_digest.digest.SemanticScholarClient") as mock_ss_cls,
+            patch("daily_research_digest.digest.get_llm_for_provider") as mock_get_llm,
+        ):
             mock_ss = MagicMock()
             mock_ss.fetch_papers = AsyncMock(return_value=sample_papers)
             mock_ss_cls.return_value = mock_ss

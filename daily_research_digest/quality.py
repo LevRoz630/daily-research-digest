@@ -58,17 +58,13 @@ def compute_quality_scores(
 
     # Auto-detect max values from papers if not provided
     if max_h_index is None:
-        all_h_indices = [
-            h for p in papers if p.author_h_indices for h in p.author_h_indices
-        ]
+        all_h_indices = [h for p in papers if p.author_h_indices for h in p.author_h_indices]
         max_h_index = max(all_h_indices) if all_h_indices else 100.0
 
     # Ensure we don't divide by zero
     max_h_index = max(max_h_index, 1.0)
 
     for paper in papers:
-        paper.quality_score = compute_quality_score(
-            paper, max_h_index=max_h_index
-        )
+        paper.quality_score = compute_quality_score(paper, max_h_index=max_h_index)
 
     return papers
