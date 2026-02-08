@@ -35,26 +35,26 @@ class TestComputeQualityScore:
         """Test score with h-index."""
         sample_paper.author_h_indices = [50, 50]  # avg 50, normalized to 0.5
         score = compute_quality_score(sample_paper, max_h_index=100.0)
-        # boost = 0.35 * 0.5 = 0.175
-        # final = 7 * (1 + 0.175) = 8.225
-        assert score == pytest.approx(8.225)
+        # boost = 0.20 * 0.5 = 0.10
+        # final = 7 * (1 + 0.10) = 7.7
+        assert score == pytest.approx(7.7)
 
     def test_with_max_h_index(self, sample_paper: Paper) -> None:
         """Test score with max h-index."""
         sample_paper.author_h_indices = [100]  # normalized to 1.0
         score = compute_quality_score(sample_paper, max_h_index=100.0)
-        # boost = 0.35 * 1.0 = 0.35
-        # final = 7 * (1 + 0.35) = 9.45
-        assert score == pytest.approx(9.45)
+        # boost = 0.20 * 1.0 = 0.20
+        # final = 7 * (1 + 0.20) = 8.4
+        assert score == pytest.approx(8.4)
 
-    def test_max_boost_is_35_percent(self, sample_paper: Paper) -> None:
-        """Test that max boost is 35%."""
+    def test_max_boost_is_20_percent(self, sample_paper: Paper) -> None:
+        """Test that max boost is 20%."""
         sample_paper.relevance_score = 10.0
         sample_paper.author_h_indices = [200]  # > max, capped to 1.0
         score = compute_quality_score(sample_paper, max_h_index=100.0)
-        # boost capped at 0.35
-        # final = 10 * 1.35 = 13.5
-        assert score == pytest.approx(13.5)
+        # boost capped at 0.20
+        # final = 10 * 1.20 = 12.0
+        assert score == pytest.approx(12.0)
 
 
 class TestComputeQualityScores:
@@ -103,10 +103,10 @@ class TestComputeQualityScores:
         compute_quality_scores(papers)
         # Paper 1 has h-index 100 (max), normalized to 1.0
         # Paper 2 has h-index 50, normalized to 0.5
-        # Paper 1 boost = 0.35 * 1.0 = 0.35, final = 5 * 1.35 = 6.75
-        # Paper 2 boost = 0.35 * 0.5 = 0.175, final = 5 * 1.175 = 5.875
-        assert papers[0].quality_score == pytest.approx(6.75)
-        assert papers[1].quality_score == pytest.approx(5.875)
+        # Paper 1 boost = 0.20 * 1.0 = 0.20, final = 5 * 1.20 = 6.0
+        # Paper 2 boost = 0.20 * 0.5 = 0.10, final = 5 * 1.10 = 5.5
+        assert papers[0].quality_score == pytest.approx(6.0)
+        assert papers[1].quality_score == pytest.approx(5.5)
 
     def test_handles_missing_signals(self) -> None:
         """Test that papers with missing signals still work."""
